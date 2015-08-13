@@ -1,0 +1,208 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 45.54      0.51     0.51      363     1.41     2.58  linetrap_2pt<dtau_CO2_int>::next()
+ 29.47      0.84     0.33  4493141     0.00     0.00  Base_interp::hunt(double)
+  8.04      0.93     0.09      310     0.29     0.57  linetrap_2pt<dtau_H_int>::next()
+  7.14      1.01     0.08  4786807     0.00     0.00  Linear_interp::rawinterp(int, double)
+  5.36      1.07     0.06  4786975     0.00     0.00  NRvector<double>::NRvector(NRvector<double> const&)
+  3.57      1.11     0.04   293666     0.00     0.00  Base_interp::locate(double)
+  0.89      1.12     0.01                             NRmatrix<double>::~NRmatrix()
+  0.00      1.12     0.00      673     0.00     0.00  NRvector<double>::operator=(NRvector<double> const&)
+  0.00      1.12     0.00        7     0.00     0.00  NRvector<double>::resize(int)
+  0.00      1.12     0.00        1     0.00     0.00  _GLOBAL__sub_I__ZN11Base_interp6locateEd
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+           this function is profiled, else blank.
+ 
+ self      the average number of milliseconds spent in this
+ms/call    function per call, if this function is profiled,
+	   else blank.
+
+ total     the average number of milliseconds spent in this
+ms/call    function and its descendents per call, if this 
+	   function is profiled, else blank.
+
+name       the name of the function.  This is the minor sort
+           for this listing. The index shows the location of
+	   the function in the gprof listing. If the index is
+	   in parenthesis it shows where it would appear in
+	   the gprof listing if it were to be printed.
+
+Copyright (C) 2012 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+		     Call graph (explanation follows)
+
+
+granularity: each sample hit covers 2 byte(s) for 0.89% of 1.12 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     83.5    0.00    0.93                 double qlinetrap_2pt<dtau_CO2_int>(dtau_CO2_int&, NRvector<double>, NRvector<double>, double) [1]
+                0.51    0.42     363/363         linetrap_2pt<dtau_CO2_int>::next() [2]
+                0.00    0.00      84/4786975     NRvector<double>::NRvector(NRvector<double> const&) [7]
+-----------------------------------------------
+                0.51    0.42     363/363         double qlinetrap_2pt<dtau_CO2_int>(dtau_CO2_int&, NRvector<double>, NRvector<double>, double) [1]
+[2]     83.5    0.51    0.42     363         linetrap_2pt<dtau_CO2_int>::next() [2]
+                0.28    0.00 3859163/4493141     Base_interp::hunt(double) [3]
+                0.07    0.00 4030806/4786807     Linear_interp::rawinterp(int, double) [6]
+                0.05    0.00 4030806/4786975     NRvector<double>::NRvector(NRvector<double> const&) [7]
+                0.02    0.00  171643/293666      Base_interp::locate(double) [8]
+                0.00    0.00     363/673         NRvector<double>::operator=(NRvector<double> const&) [17]
+-----------------------------------------------
+                0.05    0.00  633978/4493141     linetrap_2pt<dtau_H_int>::next() [5]
+                0.28    0.00 3859163/4493141     linetrap_2pt<dtau_CO2_int>::next() [2]
+[3]     29.5    0.33    0.00 4493141         Base_interp::hunt(double) [3]
+-----------------------------------------------
+                                                 <spontaneous>
+[4]     15.7    0.00    0.18                 double qlinetrap_2pt<dtau_H_int>(dtau_H_int&, NRvector<double>, NRvector<double>, double) [4]
+                0.09    0.09     310/310         linetrap_2pt<dtau_H_int>::next() [5]
+                0.00    0.00      84/4786975     NRvector<double>::NRvector(NRvector<double> const&) [7]
+-----------------------------------------------
+                0.09    0.09     310/310         double qlinetrap_2pt<dtau_H_int>(dtau_H_int&, NRvector<double>, NRvector<double>, double) [4]
+[5]     15.7    0.09    0.09     310         linetrap_2pt<dtau_H_int>::next() [5]
+                0.05    0.00  633978/4493141     Base_interp::hunt(double) [3]
+                0.02    0.00  122023/293666      Base_interp::locate(double) [8]
+                0.01    0.00  756001/4786807     Linear_interp::rawinterp(int, double) [6]
+                0.01    0.00  756001/4786975     NRvector<double>::NRvector(NRvector<double> const&) [7]
+                0.00    0.00     310/673         NRvector<double>::operator=(NRvector<double> const&) [17]
+-----------------------------------------------
+                0.01    0.00  756001/4786807     linetrap_2pt<dtau_H_int>::next() [5]
+                0.07    0.00 4030806/4786807     linetrap_2pt<dtau_CO2_int>::next() [2]
+[6]      7.1    0.08    0.00 4786807         Linear_interp::rawinterp(int, double) [6]
+-----------------------------------------------
+                0.00    0.00      84/4786975     double qlinetrap_2pt<dtau_CO2_int>(dtau_CO2_int&, NRvector<double>, NRvector<double>, double) [1]
+                0.00    0.00      84/4786975     double qlinetrap_2pt<dtau_H_int>(dtau_H_int&, NRvector<double>, NRvector<double>, double) [4]
+                0.01    0.00  756001/4786975     linetrap_2pt<dtau_H_int>::next() [5]
+                0.05    0.00 4030806/4786975     linetrap_2pt<dtau_CO2_int>::next() [2]
+[7]      5.4    0.06    0.00 4786975         NRvector<double>::NRvector(NRvector<double> const&) [7]
+-----------------------------------------------
+                0.02    0.00  122023/293666      linetrap_2pt<dtau_H_int>::next() [5]
+                0.02    0.00  171643/293666      linetrap_2pt<dtau_CO2_int>::next() [2]
+[8]      3.6    0.04    0.00  293666         Base_interp::locate(double) [8]
+-----------------------------------------------
+                                                 <spontaneous>
+[9]      0.9    0.01    0.00                 NRmatrix<double>::~NRmatrix() [9]
+-----------------------------------------------
+                0.00    0.00     310/673         linetrap_2pt<dtau_H_int>::next() [5]
+                0.00    0.00     363/673         linetrap_2pt<dtau_CO2_int>::next() [2]
+[17]     0.0    0.00    0.00     673         NRvector<double>::operator=(NRvector<double> const&) [17]
+-----------------------------------------------
+                0.00    0.00       3/7           atmointerp::atmointerp(double, double, int, std::string) [57]
+                0.00    0.00       4/7           Holinterp::Holinterp(std::string) [149]
+[18]     0.0    0.00    0.00       7         NRvector<double>::resize(int) [18]
+-----------------------------------------------
+                0.00    0.00       1/1           __libc_csu_init [298]
+[19]     0.0    0.00    0.00       1         _GLOBAL__sub_I__ZN11Base_interp6locateEd [19]
+-----------------------------------------------
+
+ This table describes the call tree of the program, and was sorted by
+ the total amount of time spent in each function and its children.
+
+ Each entry in this table consists of several lines.  The line with the
+ index number at the left hand margin lists the current function.
+ The lines above it list the functions that called this function,
+ and the lines below it list the functions this one called.
+ This line lists:
+     index	A unique number given to each element of the table.
+		Index numbers are sorted numerically.
+		The index number is printed next to every function name so
+		it is easier to look up where the function is in the table.
+
+     % time	This is the percentage of the `total' time that was spent
+		in this function and its children.  Note that due to
+		different viewpoints, functions excluded by options, etc,
+		these numbers will NOT add up to 100%.
+
+     self	This is the total amount of time spent in this function.
+
+     children	This is the total amount of time propagated into this
+		function by its children.
+
+     called	This is the number of times the function was called.
+		If the function called itself recursively, the number
+		only includes non-recursive calls, and is followed by
+		a `+' and the number of recursive calls.
+
+     name	The name of the current function.  The index number is
+		printed after it.  If the function is a member of a
+		cycle, the cycle number is printed between the
+		function's name and the index number.
+
+
+ For the function's parents, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the function into this parent.
+
+     children	This is the amount of time that was propagated from
+		the function's children into this parent.
+
+     called	This is the number of times this parent called the
+		function `/' the total number of times the function
+		was called.  Recursive calls to the function are not
+		included in the number after the `/'.
+
+     name	This is the name of the parent.  The parent's index
+		number is printed after it.  If the parent is a
+		member of a cycle, the cycle number is printed between
+		the name and the index number.
+
+ If the parents of the function cannot be determined, the word
+ `<spontaneous>' is printed in the `name' field, and all the other
+ fields are blank.
+
+ For the function's children, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the child into the function.
+
+     children	This is the amount of time that was propagated from the
+		child's children to the function.
+
+     called	This is the number of times the function called
+		this child `/' the total number of times the child
+		was called.  Recursive calls by the child are not
+		listed in the number after the `/'.
+
+     name	This is the name of the child.  The child's index
+		number is printed after it.  If the child is a
+		member of a cycle, the cycle number is printed
+		between the name and the index number.
+
+ If there are any cycles (circles) in the call graph, there is an
+ entry for the cycle-as-a-whole.  This entry shows who called the
+ cycle (as parents) and the members of the cycle (as children.)
+ The `+' recursive calls entry shows the number of function calls that
+ were internal to the cycle, and the calls entry for each member shows,
+ for that member, how many times it was called from other members of
+ the cycle.
+
+Copyright (C) 2012 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+Index by function name
+
+  [19] _GLOBAL__sub_I__ZN11Base_interp6locateEd (generate_S.cpp) [2] linetrap_2pt<dtau_CO2_int>::next() [7] NRvector<double>::NRvector(NRvector<double> const&)
+   [3] Base_interp::hunt(double) [6] Linear_interp::rawinterp(int, double) [17] NRvector<double>::operator=(NRvector<double> const&)
+   [8] Base_interp::locate(double) [9] NRmatrix<double>::~NRmatrix()
+   [5] linetrap_2pt<dtau_H_int>::next() [18] NRvector<double>::resize(int)
