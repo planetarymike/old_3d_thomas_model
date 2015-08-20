@@ -1,11 +1,6 @@
 //generate_S.h -- code to generate H source functions according to the
 //                formalism of Anderson & Hord (1976).
 
-
-//\/\/\/\/\/\/old compile and call from when this was a standalone program
-//compile: mpicxx generate_S.cpp `pkg-config --cflags --libs gsl` -I./required_procedures -o generate_S.x
-//call: mpirun -n 4 ./generate_S.x 100000 350 //or whatever
-
 #ifndef __generate_S_h
 #define __generate_S_h
 
@@ -27,7 +22,6 @@ using std::cos;
 using std::sin;
 
 string Sfilename(double nH, double T) {
-  //SRCFNSLOC is passed by a macro at compile-time
   string fname;
   char cfname[200];
   sprintf(cfname,"S_nH%G_T%G_%dx%dx%d.dat", nH, T, nrpts, nthetapts, nphipts);
@@ -55,6 +49,7 @@ void generate_S(const double nexo,
   double sH0=sH(Texo);//line center H cross section
 
   //get the Holstein T function
+  //from pre-tabulated file
   Holinterp HolT_lookup(HolTfilename);
   
   //start timing
@@ -67,12 +62,14 @@ void generate_S(const double nexo,
   VecDoub rpts(nrpts), rwts(nrpts);
   VecDoub thetapts(nthetapts), thetawts(nthetapts);
   VecDoub phipts(nphipts), phiwts(nphipts);
+  //and the ray directions and weights
   VecDoub raytpts(ntrays), raytwts(ntrays);
   VecDoub rayppts(nprays), raypwts(nprays);
   //now obtain the quadrature points in each dimension:
-  //get the points
   getquadpts(rpts,rwts,thetapts,thetawts,phipts,phiwts,printout,thisatmointerp,rmethod);
   getraypts(raytpts,raytwts,rayppts,raypwts,printout,raymethod);
+
+  //  std::cin.get();
 
   Linear_interp rterp(rpts,rpts);
   Linear_interp tterp(thetapts,thetapts);
@@ -80,7 +77,8 @@ void generate_S(const double nexo,
 
   // what's the smallest altitude in the grid?
   double rmin = rpts[nrpts-1];
-  //rmax is defined in definitions.h
+  //rmax is defined in definitions.h as an input parameter
+  //rmin is a consequence of rminatm
   
   // variables for matrix manipulation
   // source function is computed for regions, not region boundaries, hence the -1
@@ -98,12 +96,8 @@ void generate_S(const double nexo,
   double yvec[nrows]; // single scattering values
 
   //create file objects for output
-  //  ofstream kfile, yfile;
   ofstream solfile;
   string solfname;
-  //    getfname(trcheckfile,"trcheck",nrpts,nthetapts,nphipts);
-  //    getfname(kfile,"kern",nrpts,nthetapts,nphipts);
-  //    getfname(yfile,"y",nrpts,nthetapts,nphipts);
   solfname = Sfilename(nexo,Texo);
   solfile.open(solfname.c_str());
 
@@ -220,6 +214,7 @@ void generate_S(const double nexo,
 	      if (iter == maxit) {
 		std::cout << "On row " << row
 			  << " iter > maxit!" << std::endl;
+		throw("Max iterations exceeded!")
 	      }
 
 	      //get the starting box coordinates
@@ -309,6 +304,7 @@ void generate_S(const double nexo,
 	      coef*=exp(-(sf-si)*sCO2*thisatmointerp.nCO2((rpts[ordx]+rpts[ordx+1])/2,
 	      					  (thetapts[otdx]+thetapts[otdx+1])/2,
 	      					  (phipts[opdx]+phipts[opdx+1])/2));
+
 	      // std::cout << "coef (HolTi-HolTf)*domega*exp(-tCO2) = " << coef << std::endl;
 		
 	      col=ordx*(nthetapts-1)*(nphipts-1)+otdx*(nphipts-1)+opdx;
@@ -323,15 +319,6 @@ void generate_S(const double nexo,
     //    std::cout << irw << ": " << itw << ": " << ipw 
     //              << " omega/4*pi = " << omega << std::endl;
 
-    // This has been moved to the master process for the purpose of checking transposition
-    // //multiply by the factors which are constant across the row
-    // //(outside the integral):
-    // for (col = 0; col < ncols; col++) {
-    //   kvals[row][col] *= dtau_tot(rr1,nHinterp,Texo)/(4*pi);
-    // }
-
-
-    
     // keep count of the computation
     time (&rawtime);
     timeinfo = localtime(&rawtime);
@@ -358,6 +345,7 @@ void generate_S(const double nexo,
       //      std::cout << "rpt = {" << xpt << ", " << ypt << ", " << zpt << "}\n";
 
       // store the values in the vector object r2
+      rr1 = (rpts[irw]+rpts[irw+1])/2;
       r1[0] = x1; r1[1] = y1; r1[2] = z1;
       r2[0] = xpt; r2[1] = ypt; r2[2] = zpt;
 
@@ -374,23 +362,11 @@ void generate_S(const double nexo,
 
       // put them together into the y-vec
       //std::cout << "irw = " << irw << std::endl;
-      yvec[row] = HolT_lookup.interp(tauHcol)*std::exp(-tauCO2col);
+      yvec[row] = thisatmointerp.nH(rr1)*HolT_lookup.interp(tauHcol)*std::exp(-tauCO2col);
       //    yvec[row] = 0.0;
     }
   }
 
-  /* //       write kernel and yvec to file; */
-  /* std::cout << "Writing kernel and single scattering vector to file." << std::endl; */
-  /* for (row = 0; row < nrows; row++) { */
-  /*   for (col = 0; col < ncols; col++) { */
-  /* 	kfile.width(20); */
-  /* 	kfile << kvals[row][col]; */
-  /*   } */
-  /*   kfile << std::endl; */
-  /*   yfile.width(20); */
-  /*   yfile << yvec[row] << std::endl; */
-  /* } */
-  
   // solve using LU decomposition
   std::cout << "Solving for source function by matrix inversion: " << std::endl;
   MatDoub preinv(nrows,ncols);
@@ -466,11 +442,7 @@ void generate_S(const double nexo,
   Sout = Sobj(nexo, Texo, rterp, tterp, pterp, sol);
   atmoout = thisatmointerp;
 
-
-
   //Cleanup:
-  /* kfile.close(); */
-  /* yfile.close(); */
   solfile.close();
 
   //free allocated kernel matrix
