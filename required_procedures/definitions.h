@@ -61,38 +61,48 @@ const double dsmax = 100e5; // 100km
 const int maxit = 100000;
 
 //define the number of boundaries in each dimension
-const int nrpts = 74;//includes boundaries at rmin and rmax
-const int nthetapts = 19;//includes boundaries at 0 and 180
-const int nphipts = 2;//includes boundaries at 0 and 360
+const int nrpts = 80;//includes boundaries at rmin and rmax
+const int nthetapts = 33;//includes boundaries at 0 and 180
+const int nphipts = 2;//includes boundaries at 0 and 360 so 2 implies
+                      //no phi boundaries (azimuthially symmetric)
+/* const int nrpts = 76;//includes boundaries at rmin and rmax */
+/* const int nthetapts = 21;//includes boundaries at 0 and 180 */
+/* const int nphipts = 2;//includes boundaries at 0 and 360 so 2 implies */
+/*                       //no phi boundaries (azimuthially symmetric) */
   
 //number of rays
-const int ntrays = 6;
-const int nprays = 12;
+const int ntrays = 12;
+const int nprays = 24;
 
 //use chaufray hydrogen density?
 const bool usechauH = FALSE;
 
 //select the method for distributing the radial points in
-//altitude. Options are: taupts, chaupts, logpts, loglinpts.
-const string rmethod = "taupts";
+//altitude. Options are: taupts, logpts, loglinpts.
+const string rmethod = "loglinpts";
+
+//select the method for distributing the theta points in
+//altitude. Options are: uniform, doubleterm
+const string tmethod = "doubleterm";
 
 //select the method for distributing the rays in angle.
 //default is gauss-jordan quadrature in theta, uniform in phi
 const string raymethod = "gaussian";
   
 //define the HolG and HolT interpolation function locations
-//SRCFNSLOC is passed by a macro at compile time
-const string srcfnsloc=SRCFNSLOC;
-const string HolTfilename=srcfnsloc+"HolTinterp.dat";
+const string tabdataloc="./tabulated_data/";
+const string HolTfilename=tabdataloc+"HolTinterp.dat";
 //  Holinterp HolG_lookup("./tabulated_data/HolGinterp.dat");
 
 //define the LOS profile filename
-const string losproffname=srcfnsloc+"H_LOS_prof.dat";//SRCFNSLOC is passed by a macro at compile-time
-  
+const string losproffname=tabdataloc+"H_LOS_prof.dat";//SRCFNSLOC is
+						      //passed by a
+						      //macro at
+						      //compile-time
 
+//define the location to search for and store generated source functions
+const string srcfnsloc="./source_functions/";
   
-//some radiative transfer and atmospheric parameters are defined in definitions.h
-
 //______________________________________________________
 //----------------END CONTROL PARAMETERS----------------
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 

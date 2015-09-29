@@ -29,12 +29,20 @@ string Sfilename(double nH, double T) {
   return fname;
 }
 
+string auxfilename(string tag,double nH, double T) {
+  string fname;
+  char cfname[200];
+  sprintf(cfname,"%s_nH%G_T%G_%dx%dx%d.dat", tag.c_str(), nH, T, nrpts, nthetapts, nphipts);
+  fname=srcfnsloc+cfname;
+  return fname;
+}
+
 void generate_S(const double nexo, 
 		const double Texo, 
 		Sobj &Sout,
 		atmointerp &atmoout,
-		bool printout = 1, 
-		bool filesout = 1) {
+		bool printout = TRUE, 
+		bool filesout = FALSE) {
 
   std::cout << "#####################################################" << std::endl;
   std::cout << "#####################################################" << std::endl;
@@ -66,11 +74,12 @@ void generate_S(const double nexo,
   VecDoub raytpts(ntrays), raytwts(ntrays);
   VecDoub rayppts(nprays), raypwts(nprays);
   //now obtain the quadrature points in each dimension:
-  getquadpts(rpts,rwts,thetapts,thetawts,phipts,phiwts,printout,thisatmointerp,rmethod);
+  getquadpts(rpts,rwts,thetapts,thetawts,phipts,phiwts,printout,thisatmointerp,rmethod,tmethod);
   getraypts(raytpts,raytwts,rayppts,raypwts,printout,raymethod);
 
   //  std::cin.get();
 
+  //we use these terps for their hunt and seek functions
   Linear_interp rterp(rpts,rpts);
   Linear_interp tterp(thetapts,thetapts);
   Linear_interp pterp(phipts,phipts);
@@ -87,6 +96,7 @@ void generate_S(const double nexo,
   std::cout << "nrows = " << nrows 
 	    << ", ncols = " << ncols << std::endl;
 
+  //allocate the kernel matrix
   double** kvals;
   kvals = new double*[nrows];
   for (int i = 0; i < nrows; i++) {
@@ -100,29 +110,34 @@ void generate_S(const double nexo,
   string solfname;
   solfname = Sfilename(nexo,Texo);
   solfile.open(solfname.c_str());
-
+  ofstream kfile, yfile;
+  string kfilename, yfilename;
+  kfilename = auxfilename("kern",nexo,Texo);
+  kfile.open(kfilename.c_str());
+  yfilename = auxfilename("y",nexo,Texo);
+  yfile.open(yfilename.c_str());
+  
   // auxiliary variables used in computing integrals
   double x1, y1, z1, xpt, ypt, zpt; // ephemeral cartesian coordinates
-  double rr1, t1, p1; //ephemeral spherical coordinates
+  double r1, t1, p1; //ephemeral spherical coordinates
   double tray, pray; // working angles for each point
   double line_x,line_y,line_z; //unit vector along the line of interest
-  double rrpt, tpt, ppt; // spherical coordinates of the auxiliary grid point
+  double rpt, tpt, ppt; // spherical coordinates of the auxiliary grid point
   double s, ds, si, sf; // ephemeral distance and distance across volume
   double tauH, tauCO2; // optical depth
   double domega; // differential solid angle
-  double omega; // check parameter the make sure sum(domega) = 4*pi
+  double omega; // check parameter to make sure sum(domega) = 4*pi
   double coef; // influence coeffecient computed between atmospheric
 	       // point and auxiliary grid points
 
   // variables for single scattering function
-  VecDoub r1(3), r2(3); // vectors for line integration
+  VecDoub r1_vec(3), r2_vec(3); // vectors for line integration
   double tauHcol, tauCO2col;
-
 
   //lots of loop and index variables
   int row,col,irw,itw,ipw,irs,its,ips;//loop variables
   double dr, dt, dp;//size of the current grid box
-  int iter; // number of iterations in radial expansion
+  int iter; // number of iterations (steps taken along outward ray)
   int ordx, otdx, opdx, rdx, tdx, pdx; // volume indices
   
   for (row = 0; row < nrows; row++) {
@@ -147,19 +162,19 @@ void generate_S(const double nexo,
     //    std::cin.get();
 
     //get coordinates for the wedge point under consideration
-    rr1 = (rpts[irw]+rpts[irw+1])/2;
+    r1 = (rpts[irw]+rpts[irw+1])/2;
     t1 = (thetapts[itw]+thetapts[itw+1])/2;
     p1 = (phipts[ipw]+phipts[ipw+1])/2;
-    x1 = rr1*sin(t1)*cos(p1);
-    y1 = rr1*sin(t1)*sin(p1);
-    z1 = rr1*cos(t1);
+    x1 = r1*sin(t1)*cos(p1);
+    y1 = r1*sin(t1)*sin(p1);
+    z1 = r1*cos(t1);
 
-    // std::cout << "r1 = " << rr1 << std::endl;
+    // std::cout << "r1 = " << r1 << std::endl;
     // std::cout << "t1 = " << t1 << std::endl;
     // std::cout << "p1 = " << p1 << std::endl;
 
     //initialize omega
-    //    omega = 0.0;
+    omega = 0.0;
 
     //now move out from this point along the sightline grid:
     for (its = 0; its < ntrays; its++) {
@@ -173,7 +188,7 @@ void generate_S(const double nexo,
 
 	    //get the solid angle defined by these points:
 	    domega = sin(tray)*raytwts[its]*raypwts[ips]/(4*pi);
-	    //	    omega += domega;
+	    omega += domega;
 
 	    
 	    //get the unit vector components along the angle outward
@@ -192,7 +207,7 @@ void generate_S(const double nexo,
 	    
 	    // initialize the variables
 	    s = 0.0;// s = 0 at start of integration
-	    rrpt = rr1;// first point is grid point itself
+	    rpt = r1;// first point is grid point itself
 	    tpt = t1;
 	    ppt = p1;
 
@@ -202,11 +217,11 @@ void generate_S(const double nexo,
 	    xpt = x1;
 	    ypt = y1;
 	    zpt = z1;
-	    /* std::cout << "rrpt = " << rrpt  */
+	    /* std::cout << "rpt = " << rpt  */
 	    /* 	      << ", rmin = " << rmin  */
 	    /* 	      << ", rmax = " << rmax << std::endl; */
 
-	    while ((rrpt >= rmin && rrpt <= rmax && iter < maxit) || iter == 0) {
+	    while ((rpt >= rmin && rpt <= rmax && iter < maxit) || iter == 0) {
 	      //while still inside the atmosphere
 	      iter++;
 	      // if too many iterations, report error, but proceed
@@ -218,7 +233,7 @@ void generate_S(const double nexo,
 	      }
 
 	      //get the starting box coordinates
-	      ordx=rterp.index(rrpt);
+	      ordx=rterp.index(rpt);
 	      rdx=ordx;
 	      otdx=tterp.index(tpt);
 	      tdx=otdx;
@@ -266,15 +281,15 @@ void generate_S(const double nexo,
 		zpt += line_z*ds;
 		
 		// compute the new radius and angle
-		rrpt = sqrt(xpt*xpt + ypt*ypt + zpt*zpt);
-		tpt = std::acos(zpt/rrpt);
+		rpt = sqrt(xpt*xpt + ypt*ypt + zpt*zpt);
+		tpt = std::acos(zpt/rpt);
 		ppt = std::atan2(ypt,xpt);
 		
-		rdx=rterp.index(rrpt);
+		rdx=rterp.index(rpt);
 		tdx=tterp.index(tpt);
 		pdx=pterp.index(ppt);
 		
-		if (rrpt>rmax||rrpt<rmin)  break;
+		if (rpt>rmax||rpt<rmin)  break;
 	      }
 	      sf=s;
 
@@ -287,26 +302,30 @@ void generate_S(const double nexo,
 	      // std::cin.get();
 	      
 	      
-	      //now get the optical depths
+	      //get the differential optical depth across this grid point
 	      coef=sH0*thisatmointerp.nH((rpts[ordx]+rpts[ordx+1])/2,
-					   (thetapts[otdx]+thetapts[otdx+1])/2,
-					   (phipts[opdx]+phipts[opdx+1])/2);
-	      // std::cout << "coef (sHtot*nH) = " << coef << std::endl;
+					 (thetapts[otdx]+thetapts[otdx+1])/2,
+					 (phipts[opdx]+phipts[opdx+1])/2);
+	      // std::cout << "coef (sH0*nH) = " << coef << std::endl;
 
-	      coef=HolT_lookup.interp(si*coef)-HolT_lookup.interp(sf*coef);
-	      // std::cout << "coef (HolTi-HolTf) = " << coef << std::endl;
+	      coef=(HolT_lookup.interp(si*coef)-HolT_lookup.interp(sf*coef))/coef;
+	      // std::cout << "coef (HolTi-HolTf)/(sH0*nH) = " << coef << std::endl;
 
 
 	      coef*=domega;
 	      //need to add CO2 absorption
-	      // std::cout << "coef (HolTi-HolTf)*domega = " << coef << std::endl;
+	      // std::cout << "coef (HolTi-HolTf)/(sH0*nH)*domega = " << coef << std::endl;
 	      
-	      coef*=exp(-(sf-si)*sCO2*thisatmointerp.nCO2((rpts[ordx]+rpts[ordx+1])/2,
-	      					  (thetapts[otdx]+thetapts[otdx+1])/2,
-	      					  (phipts[opdx]+phipts[opdx+1])/2));
+	      coef*=exp(-(sf+si)/2*sCO2*thisatmointerp.nCO2((rpts[ordx]+rpts[ordx+1])/2,
+							  (thetapts[otdx]+thetapts[otdx+1])/2,
+							  (phipts[opdx]+phipts[opdx+1])/2));
+	      // std::cout << "coef (HolTi-HolTf)/(sH0*nH)*domega*exp(-tCO2) =" << coef << std::endl;
 
-	      // std::cout << "coef (HolTi-HolTf)*domega*exp(-tCO2) = " << coef << std::endl;
-		
+	      //multiply by the number of scatterers at the original gridpoint
+	      coef*=sH0*thisatmointerp.nH(r1, t1, p1);
+	      // std::cout << "coef (HolTi-HolTf)/(sH0*nH)*domega*exp(-tCO2)*sH0*nH0 =" 
+	      // 		<< coef << std::endl;
+	      
 	      col=ordx*(nthetapts-1)*(nphipts-1)+otdx*(nphipts-1)+opdx;
 	      kvals[row][col]+=coef;
 	      // std::cout << "now kvals[" << row << "][" << col <<"] = " 
@@ -316,8 +335,8 @@ void generate_S(const double nexo,
 	}
     }
 
-    //    std::cout << irw << ": " << itw << ": " << ipw 
-    //              << " omega/4*pi = " << omega << std::endl;
+    // std::cout << irw << ": " << itw << ": " << ipw 
+    //           << " omega/4*pi = " << omega << std::endl;
 
     // keep count of the computation
     time (&rawtime);
@@ -331,13 +350,13 @@ void generate_S(const double nexo,
 	      << itw << ": " << ipw << std::endl;
 
     //see if the point is behind the planet
-    if (t1>pi/2&&rr1*sin(t1)<rmin) {
+    if (t1>pi/2&&r1*sin(t1)<rmin) {
       std::cout << "Point " << irw << ": "
 		<< itw << ": " << ipw << " is behind the limb." << std::endl;
       yvec[row] = 0.0;
     } else {
       //compute
-      //      std::cout << "r1 = {" << x1 << ", " << y1 << ", " << z1 << "}\n";
+      //      std::cout << "r1_vec = {" << x1 << ", " << y1 << ", " << z1 << "}\n";
       // construct the point at infinity:
       xpt = x1;
       ypt = y1;
@@ -345,25 +364,26 @@ void generate_S(const double nexo,
       //      std::cout << "rpt = {" << xpt << ", " << ypt << ", " << zpt << "}\n";
 
       // store the values in the vector object r2
-      rr1 = (rpts[irw]+rpts[irw+1])/2;
-      r1[0] = x1; r1[1] = y1; r1[2] = z1;
-      r2[0] = xpt; r2[1] = ypt; r2[2] = zpt;
+      r1 = (rpts[irw]+rpts[irw+1])/2;
+      r1_vec[0] = x1 ; r1_vec[1] = y1 ; r1_vec[2] = z1;
+      r2_vec[0] = xpt; r2_vec[1] = ypt; r2_vec[2] = zpt;
 
       // get the column densities
       std::cout << "Getting CO2 optical depth...\n";
       dtau_CO2_int dtauCO2(thisatmointerp);
-      tauCO2col = qlinetrap_2pt(dtauCO2, r1, r2, 1e-3);
+      tauCO2col = qlinetrap_2pt(dtauCO2, r1_vec, r2_vec, 1e-3);
       std::cout << "  ... CO2 optical depth = "<< tauCO2col << ".\n";
 
       std::cout << "Getting H optical depth...\n";
       dtau_H_int dtauH(thisatmointerp);
-      tauHcol = qlinetrap_2pt(dtauH, r1, r2, 1e-3);
+      tauHcol = qlinetrap_2pt(dtauH, r1_vec, r2_vec, 1e-3);
       std::cout << "  ... H optical depth = "<< tauHcol << ".\n";
 
       // put them together into the y-vec
       //std::cout << "irw = " << irw << std::endl;
-      yvec[row] = thisatmointerp.nH(rr1)*HolT_lookup.interp(tauHcol)*std::exp(-tauCO2col);
+      yvec[row] = thisatmointerp.nH(r1)*HolT_lookup.interp(tauHcol)*std::exp(-tauCO2col);
       //    yvec[row] = 0.0;
+      //    std::cin.get();
     }
   }
 
@@ -426,7 +446,42 @@ void generate_S(const double nexo,
     solfile.width(20);
     solfile << sol[row] << std::endl;
   }
-    
+
+  //write kernel and yvec to file;
+  std::cout << "Writing kernel and single scattering vector to file." << std::endl;
+  for (row = 0; row < nrows; row++) {
+    for (col = 0; col < ncols; col++) {
+      //	Hfile.width(20);
+      //	Hfile << nHvals[row][col];
+      //	CO2file.width(20);
+      //	CO2file << nCO2vals[row][col];
+      kfile.width(20);
+      kfile << kvals[row][col];
+    }
+    //      Hfile << std::endl;
+    //      CO2file << std::endl;
+    kfile << std::endl;
+
+
+    irw = row/((nthetapts-1)*(nphipts-1));
+    itw = (row-irw*(nthetapts-1)*(nphipts-1))/(nphipts-1);
+    ipw = row%(nphipts-1);
+    r1 = (rpts[irw]+rpts[irw+1])/2;
+    t1 = (thetapts[itw]+thetapts[itw+1])/2;
+    p1 = (phipts[ipw]+phipts[ipw+1])/2;
+    yfile.width(20);
+    yfile << r1;
+    yfile.width(20);
+    yfile << t1;
+    yfile.width(20);
+    yfile << p1;
+    yfile.width(20);
+    yfile << yvec[row] << std::endl;
+  }
+  kfile.close();
+  yfile.close();
+
+  
   // print time elapsed
   clock_t finish = clock();
   double secs = (finish-start)*1.0/CLOCKS_PER_SEC;

@@ -315,12 +315,23 @@ void getraypts(VecDoub &thetapts, VecDoub &thetawts,
  }
  
  //for phi, trapezoidal quadrature
- //  tot = 0.0;
  for (int i = 0; i < phipts.size(); i++) {
    phipts[i] = i*2.0*pi/phipts.size();
    phiwts[i] = 2.0*pi/phipts.size();
-   //    tot += phiwts[i];
  }
+ 
+ if (printout) {
+   double tot = 0.0;
+   for (int i = 0; i < phipts.size(); i++) {
+     std::cout << "i = " << i << std::endl;
+     std::cout << "phipts[" << i << "] = " << phipts[i] << std::endl;
+     std::cout << "phiwts[" << i << "] = " << phiwts[i] << std::endl;
+     tot += phiwts[i];
+   }
+   std::cout << "tot = " << tot << std::endl;
+ }
+
+
  //  std::cout << "tot = " << tot << std::endl;
 
  //print points to file
@@ -330,16 +341,6 @@ void getraypts(VecDoub &thetapts, VecDoub &thetawts,
 }
 
 
-struct taufind
-// auxiliary function for finding radial gridpoints
-{
-  double offset;
-  dtau_tot_int * dtau;
-  taufind(double & offsett, dtau_tot_int * dtauu) : offset(offsett), dtau(dtauu) {};
-  double operator()(double & x) {
-    return qsimp((*dtau),rminatm,x,1.0e-4) - offset;
-  }
-};
 
 void logpts(VecDoub &rpts, VecDoub &rwts, const bool printout, atmointerp &thisatmointerp)
 // gets radial points that are evenly spaced in log radius,
@@ -492,10 +493,37 @@ void loglinpts(VecDoub &rpts, VecDoub &rwts, const bool printout,atmointerp &thi
   }
 }
 
+struct auxtau {
+  //auxiliary function to compute the local importance of a point for
+  //the radiative transfer, T(tau_H)*exp(-tau_CO2)
+  dtau_H_int * dtauH;
+  dtau_CO2_int * dtauCO2;
+  auxtau(dtau_H_int * dtauHH, dtau_CO2_int * dtauCO22) : dtauH(dtauHH), dtauCO2(dtauCO22) {};
+  double operator()(double & r) {
+    return 1.0-HolT((*dtauH)(r));
+  }
+};
+
+
+struct taufind
+// auxiliary function for finding radial gridpoints
+{
+  double offset;
+  auxtau * myauxtau;
+  dtau_CO2_int * dtauCO2;
+  taufind(double & offsett, 
+	  auxtau * myauxtauu, 
+	  dtau_CO2_int * dtauCO22) : offset(offsett), 
+				     myauxtau(myauxtauu), 
+				     dtauCO2(dtauCO22) {};
+  double operator()(double & r) {
+    return qsimp((*myauxtau),rminatm,r,1.0e-4)*(1-exp(-qsimp((*dtauCO2),rminatm,r,1.0e-4))) - offset;
+  }
+};
 
 void taufracpts(VecDoub &rpts, VecDoub &rwts, const bool printout,atmointerp &thisatmointerp)
-// gets radial points that are evenly spaced in optical depth,
-// and prints the optical depth spacing of the points
+// gets radial points that are evenly spaced in RT importance,
+// and prints some properties of the points
 {
   //how many rpts are there?
   int nrpts = rpts.size();
@@ -504,11 +532,14 @@ void taufracpts(VecDoub &rpts, VecDoub &rwts, const bool printout,atmointerp &th
   const double Texo = thisatmointerp.Texo;
 
   //get total optical depth from infinity to rmin
-  dtau_tot_int dtau(thisatmointerp);
-  double tau = qsimp(dtau,rminatm,rmax,1.0e-4);
-  if (printout) std::cout << "total tau through atmosphere is " << tau << std::endl;
+  dtau_H_int dtauH(thisatmointerp);
+  dtau_CO2_int dtauCO2(thisatmointerp);
+  auxtau myauxtau(&dtauH,&dtauCO2);
+  double tau = qsimp(myauxtau,rminatm,rmax,1.0e-4)*(1-exp(-qsimp(dtauCO2,rminatm,rmax,1.0e-4)));
+  if (printout) std::cout << "total Int(T(tau_H)*exp(-tau_CO2)) through atmosphere is " 
+			  << tau << std::endl;
   double taustep = tau/(nrpts-1);
-  if (printout) std::cout << "spacing in tau between radial points is " << taustep << std::endl;
+  if (printout) std::cout << "spacing between radial points is " << taustep << std::endl;
   
   //set up endpoints
   rpts[0] = rmax;
@@ -516,11 +547,12 @@ void taufracpts(VecDoub &rpts, VecDoub &rwts, const bool printout,atmointerp &th
 
   //now get the rpoints moving inward:
   double ttau = tau;
-  for (int i = 1; i < nrpts - 1; i++) {
-    //    std::cout << "finding point " << i << std::endl;
+  for (int i = 1; i <nrpts-1; i++) {
+    std::cout << "finding point " << i << std::endl;
     ttau -= taustep;
-    taufind thistau(ttau, &dtau);
+    taufind thistau(ttau, &myauxtau, &dtauCO2);
     rpts[i] = zbrent(thistau,rminatm,rpts[i-1],1e-4);
+    std::cout << "rpts[" << i << "] = " << (rpts[i]-rMars)/1e5 << std::endl;
   }
 
   //if we've got the points, we can compute the coefficients, assuming
@@ -560,176 +592,67 @@ void taufracpts(VecDoub &rpts, VecDoub &rwts, const bool printout,atmointerp &th
       std::cout << thisatmointerp.nCO2(rpts[i]);
       std::cout << std::endl;
     }
+    //    std::cin.get();
   }
 }
 
-void chaurpts(VecDoub &rpts, VecDoub &rwts, const bool printout,atmointerp &thisatmointerp)
-// gets radial points that are evenly spaced in optical depth,
-// and prints the optical depth spacing of the points
+void doubletermtpts(VecDoub &thetapts, 
+		    VecDoub &thetawts, 
+		    const bool printout)
+// gets theta points that are spaced twice as finely in the ~60
+// degrees near the terminator as they are in the remainder of the
+// space
 {
-  std::cout << "Using chaufray's tabulated values for radial points" << std::endl;
+  double termfrac=pi/6.;//fraction of SZA considered "near" the
+                             //terminator
 
-  int nrpts = rpts.size();
-  
-  // Chaufray provides 74 r points. By interpolation (see
-  // ./chaufrays_code/get_chau_r_pts.nb), I have created files with 2x
-  // and 4x this number of points. Print an error if the number of
-  // points is not one of these three numbers.
-  string fname; 
-  switch (nrpts)
-    {
-    case 74:
-      fname = "chau_r_pts.dat";
-      break;
-    case 147:
-      fname = "chau_r_pts_x2.dat";
-      break;
-    case 293:
-      fname = "chau_r_pts_x4.dat";
-    default:
-      throw("Using chaurpts doesn't work unless you use 74, 147, or 293 points in r!");      
-    }
-
-  //set up the file input to read the points in:
-  ifstream chaufile;
-  chaufile.open(fname.c_str());
-      
-  //now get the rpoints from the file
-  for (int i = 0; i < nrpts; i++) {
-    chaufile >> rpts[i];
-    //    std::cout << "rpts[" << i << "] = " << rpts[i] << std::endl;
-    //convert from km in alt to cm in radius:
-    rpts[i] = rpts[i]*1e5 + rMars;
-    //    std::cout << "rpts[" << i << "] = " << rpts[i] << std::endl;
+  int ntpts=thetapts.size();
+  std::cout << "ntpts = " << ntpts << std::endl;
+  if (ntpts<5||(ntpts-5)%4!=0) { 
+    throw("for method doubletermpts, nthetapoints must be of the form 4N+5 for N>=0.");
   }
+  thetapts[0]=0;
+  thetapts[(ntpts-1)/2]=pi/2.;
+  thetapts[ntpts-1]=pi;
+  int nmidpts=(ntpts-5)/4;
+  thetapts[nmidpts+1]=pi/2-termfrac/2;
+  thetapts[ntpts-1-(nmidpts+1)]=pi/2+termfrac/2;
+  for (int i = 1; i <= nmidpts; i++) {
+    thetapts[i]=thetapts[nmidpts+1]/(nmidpts+1)*i;
+    thetapts[ntpts-1-nmidpts-1+i]=pi/2+termfrac/2+thetapts[i];
+    thetapts[nmidpts+1+i]=pi/2-termfrac/2+termfrac/2/(nmidpts+1)*i;
+    thetapts[ntpts-1-2*(nmidpts+1)+i]=pi/2+termfrac/2/(nmidpts+1)*i;
+  } 
 
-  //if we've got the points, we can compute the coefficients, assuming
-  //simple trapezoidal quadrature:
-  rwts[0] = (rpts[0]-rpts[1])/2.0;
-  rwts[nrpts-1] = (rpts[nrpts-2]-rpts[nrpts-1])/2.0;
-  for (int i = 1; i < nrpts-1; i++) 
-    rwts[i] = (rpts[i-1]-rpts[i+1])/2.0;
-  for (int i = 0; i < nrpts; i++)
-    rwts[i] /= (rmax-rminatm);
-
-  //exobase temperature is stored in interpolation object:
-  const double Texo = thisatmointerp.Texo;
-
-  //just for funsies let's see what the optical depth looks like at each point:
-  dtau_tot_int dtau(thisatmointerp);
-  double tautot = qsimp(dtau,rminatm,2.0*rmax,1.0e-4);
-  if (printout) std::cout << "total tau through atmosphere is "
-			  << tautot << std::endl;
-  double tau[nrpts];
-  tau[0] = 0.0;
-  for (int i=1; i < nrpts; i++) {
-   tau[i] = qsimp(dtau,rpts[i],2.0*rmax,1.0e-4);
-   //   std::cout << "tau[" << i << "] = " << tau[i] << std::endl;
+  //now define the weights
+  thetawts[0]=thetapts[1]/2;
+  thetawts[ntpts-1]=thetapts[1]/2;
+  for (int i = 1; i < ntpts-1; i++) {
+    thetawts[i]=(thetapts[i+1]-thetapts[i-1])/2.;
   }
-  
 
   if (printout) {
-    //print the altitudes being used:
-    std::cout << "These are the altitudes in use for this run:" << std::endl;
-    std::cout.width(15);
-    std::cout<<"radius(cm)";
-    std::cout.width(15);
-    std::cout<<"alt(km)";
-    std::cout.width(15);
-    std::cout<<"nH cm^-3";
-    std::cout.width(15);
-    std::cout<<"tau";
-    std::cout.width(15);
-    std::cout<<"T (K)";
-    std::cout.width(15);
-    std::cout<<"nC02 cm^-3";
-    std::cout<<std::endl;
-    for (int i = 0; i < nrpts; i++) {
-      std::cout.width(15);
-      std::cout << rpts[i];
-      std::cout.width(15);
-      std::cout << (rpts[i]-rMars)/1e5;
-      std::cout.width(15);
-      std::cout << thisatmointerp.nH(rpts[i]);
-      std::cout.width(15);
-      std::cout << tau[i];
-      std::cout.width(15);
-      std::cout << Temp(rpts[i],Texo);
-      std::cout.width(15);
-      std::cout << thisatmointerp.nCO2(rpts[i]);
-      std::cout << std::endl;
+    double tot = 0.0;
+    for (int i = 0; i < thetapts.size(); i++) {
+      std::cout << "i = " << i << std::endl;
+      std::cout << "thetapts[" << i << "] = " << thetapts[i] 
+		<< " ("<< 180./pi*thetapts[i] << ")"<< std::endl;
+      std::cout << "thetawts[" << i << "] = " << thetawts[i] << std::endl;
+      tot += thetawts[i];
     }
+    std::cout << "tot = " << tot << std::endl;
   }
+  std::cin.get();
+
 }
 
-// void getfname(ofstream &file, const char *tag,const int nrpts,const int ntpts, const int nppts)
-// {
-//   //file extension
-//   char ext[50];
-//   sprintf(ext,"%dx%dx%d.dat",nrpts,ntpts,nppts);
 
-//   //get filename, open file
-//   //std::cout << "Input a filename for the "<< tag <<" matrix (or Enter to use "<< tag << ext << "): ";
-//   char name[50];
-//   //std::cin.getline(name,50);
-//   //if (!strcmp(name,""))
-//     sprintf(name,"%s%s",tag,ext);
-//   file.open(name);
-//   file.precision(10);
-//   file.setf(ios_base::scientific);
-// }
-
-// void printpts(const VecDoub &rpts, const VecDoub &rwts, 
-// 	      const VecDoub &tpts, const VecDoub &twts,
-// 	      const VecDoub &ppts, const VecDoub &pwts, const char* tag)
-// {
-//   int nrpts = rpts.size();
-//   int ntpts = tpts.size();
-//   int nppts = ppts.size();
-//   ofstream ptsfile;
-//   getfname(ptsfile,tag,nrpts,ntpts,nppts);
-
-//   std::cout << "Points used for RT in atm are being saved to: "
-// 	    << tag << nrpts << "x" << ntpts << "x" << nppts << ".dat" << std::endl;
-  
-//   ptsfile << "This file contains the radial and angular points and weights "
-// 	  << "used for the calculation specified in the filename.\n\n";
-
-//   ptsfile << "Radial points and weights: (in km)\n\n";
-//   for (int i = 0; i < nrpts; i++) {
-//     ptsfile.width(20);
-//     ptsfile << (rpts[i]-rMars)/1e5;
-//     ptsfile.width(20);
-//     ptsfile << rwts[i];
-//     ptsfile << std::endl;
-//   }
-
-//   ptsfile << "SZA points and weights: (in radians)\n\n";
-//   for (int i = 0; i < ntpts; i++) {
-//     ptsfile.width(20);
-//     ptsfile << tpts[i];
-//     ptsfile.width(20);
-//     ptsfile << twts[i];
-//     ptsfile << std::endl;
-//   }
-
-//   ptsfile << "Phi points and weights: (in radians)\n\n";
-//   for (int i = 0; i < nppts; i++) {
-//     ptsfile.width(20);
-//     ptsfile << ppts[i];
-//     ptsfile.width(20);
-//     ptsfile << pwts[i];
-//     ptsfile << std::endl;
-//   }
-
-//   ptsfile.close();
-//   return ;
-// }
 
 void getquadpts(VecDoub &rpts, VecDoub &rwts, 
 		VecDoub &thetapts, VecDoub &thetawts,
 		VecDoub &phipts, VecDoub &phiwts, const bool printout,
-		atmointerp &thisatmointerp, const string rmethod="logpts")
+		atmointerp &thisatmointerp, 
+		const string rmethod="loglinpts",const string tmethod="uniform")
 //gets quadrature points and weights and stores them in the passed
 //vector objects
 {
@@ -737,9 +660,6 @@ void getquadpts(VecDoub &rpts, VecDoub &rwts,
   if (rmethod=="taupts") {
     // get radial points that are uniformly spaced in optical depth:
     taufracpts(rpts,rwts,printout,thisatmointerp);      
-  } else if (rmethod=="chaupts") {
-    // use chaufray's tabulated points
-    chaurpts(rpts,rwts,printout,thisatmointerp);
   } else if (rmethod=="logpts") {
     // use points with equal logarithmic spacing:
     logpts(rpts,rwts,printout,thisatmointerp);
@@ -751,13 +671,20 @@ void getquadpts(VecDoub &rpts, VecDoub &rwts,
     throw(msg.c_str());
   }
   
-  //spacing in SZA is uniform (trapezoidal quadrature):
-  for (int i = 0; i < thetapts.size(); i++) {
-    thetapts[i] = i*pi/(thetapts.size()-1);
-    thetawts[i] = pi/(thetapts.size()-1);
+  if (tmethod=="doubleterm") {
+    doubletermtpts(thetapts,thetawts,printout);
+  } else if (tmethod=="uniform") {
+    //spacing in SZA is uniform (trapezoidal quadrature):
+    for (int i = 0; i < thetapts.size(); i++) {
+      thetapts[i] = i*pi/(thetapts.size()-1);
+      thetawts[i] = pi/(thetapts.size()-1);
+    }
+    thetawts[0] /= 2.0;
+    thetawts[thetapts.size()-1] /= 2.0;
+  } else {
+    string msg="No method "+tmethod+" in getquadpts!";
+    throw(msg.c_str());
   }
-  thetawts[0] /= 2.0;
-  thetawts[thetapts.size()-1] /= 2.0;
 
   //  double tot = 0.0;
   //  for (int i = 0; i < thetapts.size(); i++) {

@@ -409,16 +409,15 @@ struct LOS_integrator
     double r0 = x0*x0 + y0*y0 + z0*z0;
     r0 = sqrt(r0);
 
-    // std::cout << "x0 = " << x0 << std::endl;
-    // std::cin.get();
+    /* std::cout << "r0  = { " << x0 << " , " << y0 << " , " << z0 << " }, \n"; */
     
     //get the unit vector components along the LOS
     double line_x = dir[0];
     double line_y = dir[1];
     double line_z = dir[2];
 
-    // std::cout << "line = { " << line_x << " , " << line_y << " , " << line_z << "}\n";
-    // std::cin.get();
+    /* std::cout << "line = { " << line_x << " , " << line_y << " , " << line_z << "}\n"; */
+    /* std::cin.get(); */
 	    
     // initialize the variables
     double ds = 0.0;// ds = 0.0; this changes soon
@@ -433,7 +432,7 @@ struct LOS_integrator
     double tauCO2 = 0.0;
     double intensity = 0.0;// integral starts out at zero
     int iter = 0;
-    //std::cout << "rrpt = " << rrpt << ", rminatm = " << rminatm << ", rmax = " << rmax << std::endl;
+    /* std::cout << "rrpt = " << rrpt << ", rminatm = " << rminatm << ", rmax = " << rmax << std::endl; */
 
     //if we're outside the atmosphere to begin, advance to the edge with
     //no penalty:
@@ -442,8 +441,8 @@ struct LOS_integrator
       std::cout << "Before moving: rrpt = " << rrpt << " > rmax = " << rmax <<std::endl; 
       s = xpt*line_x + ypt*line_y + zpt*line_z;
       s = -s - sqrt(s*s + rmax*rmax - rrpt*rrpt);// I know it looks negative
-      // but actually s=r0.line is
-      // negative (basic quad. eq.)
+      // but actually s=r0.line is negative (basic quad. eq.), because
+      // we are outside the atmosphere looking in.
       std::cout << "Moving forward by s = " << s << " cm." << std::endl;
       xpt += s*line_x;
       ypt += s*line_y;
@@ -467,27 +466,37 @@ struct LOS_integrator
 	std::cout << "iter > maxit!" << std::endl;
       }
 
-      //      std::cout << "tauH = " << tauH << std::endl;
-      //      std::cout << "HolTinterp(tauH) = " << HolTinterp.interp(tauH) << std::endl;
-      intensity += HolTinterp.interp(tauH)*exp(-tauCO2)*S(rrpt,tpt,ppt)*dtau;
+      /* std::cout << "tauH = " << tauH << std::endl; */
+      /* std::cout << "HolTinterp(tauH) = " << HolTinterp.interp(tauH) << std::endl; */
+      /* std::cout << "tauCO2 = " << tauCO2 << std::endl; */
+      /* std::cout << "exp(-tauCO2) = " << exp(-tauCO2) << std::endl; */
+      /* std::cout << "S(rrpt="<< rrpt */
+      /* 	        <<  ", tpt=" << tpt  */
+      /*           <<  ", ppt=" << ppt */
+      /* 		<<") = " << S(rrpt,tpt,ppt) << std::endl; */
+      /* std::cout << "dI = " << HolTinterp.interp(tauH)*exp(-tauCO2)*S(rrpt,tpt,ppt)*dtau  */
+      /* 		<< std::endl; */
+      /* std::cout << "dtau = " << dtau << std::endl; */
 
       //compute new step size
       double ainv;
       ainv = dtau_H(rrpt,tpt,ppt,thisatmointerp); // mean scattering length
-	      
+      
       ds = dtau/ainv; // new distance computed from dtau and
       // local scattering cross section
-      //std::cout << "ds = " << ds << std::endl;
-      //std::cout << "dsmin = " << dsmin << std::endl;
-      //std::cout << "dsmax = " << dsmax << std::endl;
+      /* std::cout << "ds = " << ds << std::endl; */
+      /* std::cout << "dsmin = " << dsmin << std::endl; */
+      /* std::cout << "dsmax = " << dsmax << std::endl; */
       ds = ds < dsmin ? dsmin : ds; // keep the distance
       ds = ds > dsmax ? dsmax : ds; // within the bounds
-      //std::cout << "ds = " << ds << std::endl;
-      //std::cin.get();
+      /* std::cout << "ds = " << ds << std::endl; */
+      /* std::cin.get(); */
 	    
       //compute the optical depth
       tauH += ainv*ds;
       tauCO2 += dtau_CO2(rrpt,tpt,ppt,thisatmointerp)*ds;
+
+      intensity += HolTinterp.interp(tauH)*exp(-tauCO2)*S(rrpt,tpt,ppt)*ds;
 
       // move out along the unit vector:	      
       s += ds;
@@ -511,6 +520,7 @@ struct LOS_integrator
     return intensity;
   }
 
+  //overloaded function in case taus are not desired output
   double integrate(Sobj &S, atmointerp &thisatmointerp,
 		   const VecDoub &pos, const VecDoub &dir,
 		   const double &g)

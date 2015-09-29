@@ -13,7 +13,7 @@
 #include "nr3.h" // type VecDoub
 #include "los.h"       //line of sight integration routines
 #include "rad_trans.h" // two-point column density, holstein t and g functions
-#include "iph_sim.h"
+#include "iph_sim.h" 
 #include "generate_S.h"
 
 struct corona_simulator {
@@ -40,7 +40,7 @@ struct corona_simulator {
 
   Sobj current_S; // current Sobj
   atmointerp current_atmointerp; //array of atmointerps for each nH, T
-  bool Sinit; //also reflects status of atmointerp b/c these are loaded simultaneously
+  bool Sinit; //also reflects status of atmointerp b/c these are loaded together
 
   LOS_integrator LOS; //object to do line integration given S and tabulated HolT values
 
@@ -136,21 +136,23 @@ struct corona_simulator {
     }
   }
 
-  void get_S(double nH, double T) {
+  void get_S(double nH, double T,bool forcesim=FALSE) {
     /* tries to load S from file; if file not found, calculates and
        produces file for future use */
-
-    //what would the filename look like?
-    string Sfname=Sfilename(nH,T);
-    ifstream Sfile(Sfname.c_str());
-    if (Sfile.good()) {
-      Sfile.close();
-      current_S=Sobj(Sfname);
-      //if S file exists, atmointerp does too.
-      current_atmointerp = atmointerp(current_S.nH,current_S.T,nphyspts);
+    
+    if (!forcesim) { 
+	//what would the filename look like?
+	string Sfname=Sfilename(nH,T);
+	ifstream Sfile(Sfname.c_str());
+	if (Sfile.good()) {
+	  Sfile.close();
+	  current_S=Sobj(Sfname);
+	  //if S file exists, atmointerp does too.
+	  current_atmointerp = atmointerp(current_S.nH,current_S.T,nphyspts);
+	}
+	Sfile.close();
     } else {
       //Sfile does not exist, we must create it.
-      Sfile.close();
       generate_S(nH, T, current_S, current_atmointerp);
     }
     Sinit=1;
@@ -169,9 +171,9 @@ struct corona_simulator {
     double T = current_S.T;
 
     //from the input data, compute lineint = Fsun * doppler width (Hz) * sqrt(pi)
-    lineintcoef = Fsun_mars*(1/121.6e-7)*sqrt(2*pi*kB*T/mH);
+    lineintcoef = Fsun_mars*sHtot/(4*pi);
     //^^^^ photons/s/cm2/Hz * Hz = photons/cm2/s.
-    /* std::cout << "doppler width* sqrt(pi) = " << sqrt(2*pi*kB*T/mH) << std::endl;  */
+    /* std::cout << "doppler width* sqrt(pi) = " << sqrt(2*pi*kB*T/mH) << std::endl; */
     /* std::cout << "lineintcoef = " << lineintcoef << std::endl; */
 
     
@@ -185,10 +187,10 @@ struct corona_simulator {
 			   lineintcoef);// photons/cm2/s
     //convert to rayleighs
     tIcalc /= 1e6;// megaphoton/cm2/s
-    tIcalc /= 1e3; // now we're in kR; see C&H pg. 280-282
+    tIcalc *= 4*pi/1e3; // now we're in kR; see C&H pg. 280-282
     
     //now add in the IPH
-    tIcalc += IPH.sim(IPHb,nH,T,iobs);
+    //    tIcalc += IPH.sim(IPHb,nH,T,iobs);
     
     return tIcalc;
       
@@ -208,55 +210,5 @@ struct corona_simulator {
   }
   
 };
-
-
-  /* double simulate_gridpoint(int iobs, int inH, int iT, double IPHb=0.0) { */
-  /*   //simulate intensity observed for a single point in altitude, density, temperature */
-  /*   /\* std::cout << "Simulating coordinate iobs = " << iobs  *\/ */
-  /*   /\* 	      << ", inH =" << inH << ", iT = " << iT << ".\n"; *\/ */
-
-  /*   double nH = solnH[inH]; */
-  /*   double T = solT[iT]; */
-
-  /*   //from the input data, compute lineint = Fsun * doppler width (Hz) * sqrt(pi) */
-  /*   lineintcoef = thisobs.Fsun_mars*(1/121.6e-7)*sqrt(2*pi*kB*T/mH);  */
-  /*   //^^^^ photons/s/cm2/Hz * Hz = photons/cm2/s. */
-
-  /*   if (!(filesinit[inH][iT])) { */
-  /*     //if files have not been loaded, load them */
-  /*     char Sfile[200]; */
-  /*     sprintf(Sfile, "%sS_nH%d_T%d.dat", src_fn_folder.c_str(),(int) nH,(int) T); */
-  /*     //	  std::cout << "Sfile = " << Sfile << "\n"; */
-  /*     Sobjs[inH][iT] = new Sobj(rpts,tpts,ppts,Sfile); */
-  /*     char atmofile[200]; */
-  /*     sprintf(atmofile, "%satm_nH%d_T%d.dat", src_fn_folder.c_str(),(int) nH,(int) T); */
-  /*     atmointerps[inH][iT] = new atmointerp(nH, T, nphyspts, atmofile); */
-  /*     filesinit[inH][iT]=true; */
-  /*   } */
-          
-  /*   double tIcalc = 0.0; */
-  /*   VecDoub posvec(3,thisobs.pos[iobs]); */
-  /*   VecDoub dirvec(3,thisobs.dir[iobs]); */
-  /*   tIcalc = (*LOS).integrate(*(Sobjs[inH][iT]), */
-  /* 			   *(atmointerps[inH][iT]), */
-  /* 			   posvec, */
-  /* 			   dirvec, */
-  /* 			   lineintcoef);// photons/cm2/s */
-  /*   //convert to rayleighs */
-  /*   tIcalc /= 1e6;// megaphoton/cm2/s */
-  /*   tIcalc /= 1e3; // now we're in kR; see C&H pg. 280-282 */
-
-  /*   //now add in the IPH */
-  /*   tIcalc += (*IPH).sim(IPHb,nH,T,iobs); */
-    
-  /*   return tIcalc; */
-      
-  /*   //	  std::cout << "tIcalc = " << tIcalc << "\n"; */
-  /*   //	  std::cout << "I_obs = " << thisobs.I_obs[iobs] */
-  /*   //		    << " +- " << thisobs.DI_obs[iobs] << " kR,\n"; */
-  /*   //	  std::cin.get(); */
-  /* } */
-
-
 
 #endif
