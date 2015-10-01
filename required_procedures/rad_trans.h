@@ -642,7 +642,7 @@ void doubletermtpts(VecDoub &thetapts,
     }
     std::cout << "tot = " << tot << std::endl;
   }
-  std::cin.get();
+  //  std::cin.get();
 
 }
 

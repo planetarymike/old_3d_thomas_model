@@ -59,6 +59,7 @@ void generate_S(const double nexo,
   //get the Holstein T function
   //from pre-tabulated file
   Holinterp HolT_lookup(HolTfilename);
+  Holinterp HolG_lookup(HolGfilename);
   
   //start timing
   clock_t start = clock(); // start whole task timer
@@ -127,9 +128,9 @@ void generate_S(const double nexo,
   double tauH, tauCO2; // optical depth
   double domega; // differential solid angle
   double omega; // check parameter to make sure sum(domega) = 4*pi
-  double coef; // influence coeffecient computed between atmospheric
-	       // point and auxiliary grid points
-
+  double coef,tcoef; // influence coeffecient computed between atmospheric
+                     // point and auxiliary grid points
+  double nH1,nH2,nCO21,nCO22;//temporary densities for trapezoidal line integration
   // variables for single scattering function
   VecDoub r1_vec(3), r2_vec(3); // vectors for line integration
   double tauHcol, tauCO2col;
@@ -211,6 +212,9 @@ void generate_S(const double nexo,
 	    tpt = t1;
 	    ppt = p1;
 
+	    nH1=thisatmointerp.nH(rpt,tpt,ppt);
+	    nCO21=thisatmointerp.nCO2(rpt,tpt,ppt);
+
 	    coef = 0.0;// this changes soon
 	    iter = 0;
 
@@ -266,6 +270,8 @@ void generate_S(const double nexo,
 	      ds = ds < dsfrac*dt ? ds : dsfrac*dt;
 	      ds = ds < dsfrac*dp ? ds : dsfrac*dp;
 	      
+	      ds = ds < dtau/(sH0*nH1) ? ds : dtau/(sH0*nH1);
+
 	      // std::cout << "dr = " << dr << std::endl;
 	      // std::cout << "dt = " << dt << std::endl;
 	      // std::cout << "dp = " << dp << std::endl;
@@ -288,6 +294,20 @@ void generate_S(const double nexo,
 		rdx=rterp.index(rpt);
 		tdx=tterp.index(tpt);
 		pdx=pterp.index(ppt);
+
+		if (innerloopabs) {
+		  nH2=thisatmointerp.nH(rpt,tpt,ppt);
+		  nCO22=thisatmointerp.nH(rpt,tpt,ppt);
+		  		  
+		  tauH  +=ds* sH0*(nH1+nH2)/2;
+		  tauCO2+=ds*sCO2*(nCO21+nCO22)/2;
+		  coef+=HolG_lookup.interp(tauH)*exp(-tauCO2)*ds;
+
+		  nH1=nH2;
+		  nCO21=nCO22;
+		}
+
+		ds = ds < dtau/(sH0*nH1) ? ds : dtau/(sH0*nH1);
 		
 		if (rpt>rmax||rpt<rmin)  break;
 	      }
@@ -301,30 +321,27 @@ void generate_S(const double nexo,
 	      // 		<< pdx << ".\n";
 	      // std::cin.get();
 	      
-	      
-	      //get the differential optical depth across this grid point
-	      coef=sH0*thisatmointerp.nH((rpts[ordx]+rpts[ordx+1])/2,
-					 (thetapts[otdx]+thetapts[otdx+1])/2,
-					 (phipts[opdx]+phipts[opdx+1])/2);
-	      // std::cout << "coef (sH0*nH) = " << coef << std::endl;
-
-	      coef=(HolT_lookup.interp(si*coef)-HolT_lookup.interp(sf*coef))/coef;
-	      // std::cout << "coef (HolTi-HolTf)/(sH0*nH) = " << coef << std::endl;
-
-
+	      if (!innerloopabs) {
+		//get the differential optical depth across this grid point
+		coef=sH0*thisatmointerp.nH((rpts[ordx]+rpts[ordx+1])/2,
+					   (thetapts[otdx]+thetapts[otdx+1])/2,
+					   (phipts[opdx]+phipts[opdx+1])/2);
+		// std::cout << "coef (sH0*nH) = " << coef << std::endl;
+		
+		tcoef=sCO2*thisatmointerp.nCO2((rpts[ordx]+rpts[ordx+1])/2,
+					       (thetapts[otdx]+thetapts[otdx+1])/2,
+					       (phipts[opdx]+phipts[opdx+1])/2);
+		coef=(HolT_lookup.interp(si*coef)*exp(-si*tcoef)
+		      -HolT_lookup.interp(sf*coef)*exp(-sf*tcoef))/coef;
+		// std::cout << "coef (HolTi-HolTf)/(sH0*nH) = " << coef << std::endl;
+	      }
 	      coef*=domega;
-	      //need to add CO2 absorption
-	      // std::cout << "coef (HolTi-HolTf)/(sH0*nH)*domega = " << coef << std::endl;
-	      
-	      coef*=exp(-(sf+si)/2*sCO2*thisatmointerp.nCO2((rpts[ordx]+rpts[ordx+1])/2,
-							  (thetapts[otdx]+thetapts[otdx+1])/2,
-							  (phipts[opdx]+phipts[opdx+1])/2));
-	      // std::cout << "coef (HolTi-HolTf)/(sH0*nH)*domega*exp(-tCO2) =" << coef << std::endl;
-
 	      //multiply by the number of scatterers at the original gridpoint
 	      coef*=sH0*thisatmointerp.nH(r1, t1, p1);
 	      // std::cout << "coef (HolTi-HolTf)/(sH0*nH)*domega*exp(-tCO2)*sH0*nH0 =" 
 	      // 		<< coef << std::endl;
+	      
+
 	      
 	      col=ordx*(nthetapts-1)*(nphipts-1)+otdx*(nphipts-1)+opdx;
 	      kvals[row][col]+=coef;

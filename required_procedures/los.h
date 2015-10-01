@@ -265,10 +265,12 @@ struct Sobj {
     ipa = (ppt > tp) ? ipa=ip+1 : ipa=ip-1;
     if (ipa=-1) {//loop to phi<0
       ipa=nppts-2;
-      tpa=(pterp.xx[ipa]+pterp.xx[ipa+1])/2-2*pi;//-2pi for coef calculation
+      tpa=(pterp.xx[ipa]+pterp.xx[ipa+1])/2-2*pi;//-2pi for coef calculation 
+                                                 //(b/c pterp.xx e[0,2pi])
     } else if (ipa=nppts-1) {//loop to phi>2pi
       ipa=0;
       tpa=(pterp.xx[ipa]+pterp.xx[ipa+1])/2+2*pi;//+2pi for coef calculation
+                                                 //(b/c pterp.xx e[0,2pi])
     } else {
       tpa=(pterp.xx[ipa]+pterp.xx[ipa+1])/2;
     }
@@ -276,7 +278,8 @@ struct Sobj {
     // std::cout << "ipa = " << ipa << std::endl;
     // std::cout << "tp = " << tp << ", tpa = " << tpa << std::endl;
     
-    //first the coefficients
+    //first the coefficients (representing the degree with which to
+    //weight the adjacent points)
     double ar, at, ap;
     if (ira==nrpts-2||ira==0) {
       ar=0.0;//if we're at the top or bottom of the grid, stay put!

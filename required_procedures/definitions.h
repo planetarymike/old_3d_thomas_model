@@ -11,7 +11,6 @@ const double mMars = .1076 * 5.98e27;// gm, Mass of Mars (from fraction of Earth
 const double nr0 = 2.6e13; // cm^-3, number density of CO2 atmosphere at surface
 const double rexo = 3595e5;// cm, exobase altitude
 
-//const double Tinf = 240.0;// K, temperature of the atmosphere at infinity; superseded by command line input
 const double rminatm = rMars + 80e5; // cm, minimum altitude in model atmosphere
 const double rmax = 50000e5+rMars;
 
@@ -29,13 +28,10 @@ const double mCO2 = 44 * mH;// gm, mass of CO2 molecule
 const double pi = 3.1415926535898;
 
 //radiative transfer parameters
-//const double Hn0test = 2.5e5; // fiducial value for hydrogen density; superseded by command line inputs
 const double sHtot = 2.647e-2 * 0.416;// cm^2 Hz,
                                       // total cross section of Ly alpha pi*e^2/(m c) * f
 
 const double sCO2 = 6.3e-20; //cm^2 CO2 cross section at Ly alpha
-//const double sH = 5.96e-12/sqrt(Tinf); //effective H cross section at Ly alpha; function of
-                                         //temperature throughout atmosphere; now defined in physical.h
 
 //parallel processing definitions:
 const int master = 0; // rank of the master process; needed in both main() and interpgen.h
@@ -51,7 +47,7 @@ const bool FALSE = 0;
 const double dsfrac = 0.05;//fraction of the smallest box dimension
 
 //differential optical depth
-const double dtau = 0.01;
+const double dtau = 0.005;
 
 //max and min path length
 const double dsmin = 0.1e5; // 0.1km
@@ -61,18 +57,23 @@ const double dsmax = 100e5; // 100km
 const int maxit = 100000;
 
 //define the number of boundaries in each dimension
-const int nrpts = 80;//includes boundaries at rmin and rmax
-const int nthetapts = 33;//includes boundaries at 0 and 180
+const int nrpts = 160;//includes boundaries at rmin and rmax
+                      //strongest dependence of computed intensities is here
+
+const int nthetapts = 17;//includes boundaries at 0 and 180
+                         //if using method doubleterm, must be of the form
+                         //4N+5 for N=0,1,2,
+                         //ie 5, 9, 13, 17, 21, 25, 29, 33, 37, ...
+
 const int nphipts = 2;//includes boundaries at 0 and 360 so 2 implies
                       //no phi boundaries (azimuthially symmetric)
-/* const int nrpts = 76;//includes boundaries at rmin and rmax */
-/* const int nthetapts = 21;//includes boundaries at 0 and 180 */
-/* const int nphipts = 2;//includes boundaries at 0 and 360 so 2 implies */
-/*                       //no phi boundaries (azimuthially symmetric) */
-  
+
 //number of rays
-const int ntrays = 12;
-const int nprays = 24;
+const int ntrays = 2;//very weak dependence on number of rays
+const int nprays = 4;
+
+//compute CO2 absoprtion self-consistently in the inner loop?
+const bool innerloopabs=TRUE;//bad things happen if FALSE
 
 //use chaufray hydrogen density?
 const bool usechauH = FALSE;
@@ -92,6 +93,8 @@ const string raymethod = "gaussian";
 //define the HolG and HolT interpolation function locations
 const string tabdataloc="./tabulated_data/";
 const string HolTfilename=tabdataloc+"HolTinterp.dat";
+const string HolGfilename=tabdataloc+"HolGinterp.dat";
+
 //  Holinterp HolG_lookup("./tabulated_data/HolGinterp.dat");
 
 //define the LOS profile filename
