@@ -298,10 +298,17 @@ void getraypts(VecDoub &thetapts, VecDoub &thetawts,
  //for theta, simply Gauss-Legendre quadrature
   if (raymethod=="gaussian") {
     gauleg(0.0,pi,thetapts,thetawts);
+  } else if (raymethod=="uniform") {
+    for (int i = 0; i < thetapts.size(); i++) {
+      thetapts[i] = i*pi/(thetapts.size()-1);
+      thetawts[i] = pi/(thetapts.size()-1);
+    }
+    thetawts[0]/=2;
+    thetawts[thetapts.size()-1]/=2;
   } else {
-    std::cout << "raymothod \"" << raymethod << "\" not supported!\n"; 
-    throw("raymethod not supported.");
-  }
+  std::cout << "raymothod \"" << raymethod << "\" not supported!\n"; 
+  throw("raymethod not supported.");
+ }
 
  if (printout) {
    double tot = 0.0;
@@ -312,6 +319,7 @@ void getraypts(VecDoub &thetapts, VecDoub &thetawts,
      tot += thetawts[i];
    }
    std::cout << "tot = " << tot << std::endl;
+   //   std::cin.get();
  }
  
  //for phi, trapezoidal quadrature

@@ -132,14 +132,14 @@ struct corona_simulator {
     } else {//obsfile not found!
       std::cout << "Observation file " << obsfile << " not found!\n" 
 		<< "Check that file path is correct.\n";
-      
+      throw("obsfile not found!");
     }
   }
 
   void get_S(double nH, double T,bool forcesim=FALSE) {
     /* tries to load S from file; if file not found, calculates and
        produces file for future use */
-    
+
     if (!forcesim) { 
 	//what would the filename look like?
 	string Sfname=Sfilename(nH,T);
@@ -149,19 +149,26 @@ struct corona_simulator {
 	  current_S=Sobj(Sfname);
 	  //if S file exists, atmointerp does too.
 	  current_atmointerp = atmointerp(current_S.nH,current_S.T,nphyspts);
+	  Sinit=1;
 	}
 	Sfile.close();
-    } else {
+    }
+    if (!Sinit) {
       //Sfile does not exist, we must create it.
       generate_S(nH, T, current_S, current_atmointerp);
+      Sinit=1;
     }
-    Sinit=1;
+
+    return;
   }
 
   double simulate_iobs(int iobs, Sobj &thisS, atmointerp &thisatmointerp, double IPHb=0.0) {
-    if (!Sinit||!obsinit)
+    if (!Sinit||!obsinit) {
+      std::cout << "Sinit = " << Sinit << std::endl;
+      std::cout << "obsinit = " << obsinit << std::endl;
+      
       throw("Load observation and source function before calling simulate()!");
-
+    }
     //simulate intensity for a single observation using the current
     //Sobj and the specicified IPH background.
     /* std::cout << "Simulating coordinate iobs = " << iobs  */
@@ -202,8 +209,13 @@ struct corona_simulator {
 
   void calc_I(double IPHb=0.0) {
     //simulates for all iobs and stores the result in I_calc
-    if (!Sinit||!obsinit)
+    if (!Sinit||!obsinit) {
+      std::cout << "Sinit = " << Sinit << std::endl;
+      std::cout << "obsinit = " << obsinit << std::endl;
+      
       throw("Load observation and source function before calling simulate()!");
+    }
+
     I_calc.resize(nobs);
     for (int iobs=0; iobs<nobs; iobs++)
       I_calc[iobs]=simulate_iobs(iobs,current_S,current_atmointerp,IPHb);

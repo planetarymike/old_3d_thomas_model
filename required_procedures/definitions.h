@@ -57,9 +57,16 @@ const double dsmax = 100e5; // 100km
 const int maxit = 100000;
 
 //define the number of boundaries in each dimension
+
+//select the method for distributing the radial points in
+//altitude. Options are: taupts, logpts, loglinpts.
+const string rmethod = "loglinpts";
 const int nrpts = 160;//includes boundaries at rmin and rmax
                       //strongest dependence of computed intensities is here
 
+//select the method for distributing the theta points in
+//angle. Options are: uniform, doubleterm
+const string tmethod = "uniform";//"doubleterm";
 const int nthetapts = 17;//includes boundaries at 0 and 180
                          //if using method doubleterm, must be of the form
                          //4N+5 for N=0,1,2,
@@ -68,27 +75,22 @@ const int nthetapts = 17;//includes boundaries at 0 and 180
 const int nphipts = 2;//includes boundaries at 0 and 360 so 2 implies
                       //no phi boundaries (azimuthially symmetric)
 
+//select the method for distributing the rays in theta angle.
+//options are "gaussian" and "uniform"
+//phi rays are always uniform
+const string raymethod = "gaussian";
 //number of rays
-const int ntrays = 2;//very weak dependence on number of rays
-const int nprays = 4;
+const int ntrays = 5;//weak dependence on number of rays
+const int nprays = 10;
 
 //compute CO2 absoprtion self-consistently in the inner loop?
-const bool innerloopabs=TRUE;//bad things happen if FALSE
+const bool inloop=TRUE;//bad things happen if FALSE
 
 //use chaufray hydrogen density?
 const bool usechauH = FALSE;
 
-//select the method for distributing the radial points in
-//altitude. Options are: taupts, logpts, loglinpts.
-const string rmethod = "loglinpts";
 
-//select the method for distributing the theta points in
-//altitude. Options are: uniform, doubleterm
-const string tmethod = "doubleterm";
 
-//select the method for distributing the rays in angle.
-//default is gauss-jordan quadrature in theta, uniform in phi
-const string raymethod = "gaussian";
   
 //define the HolG and HolT interpolation function locations
 const string tabdataloc="./tabulated_data/";

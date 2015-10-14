@@ -54,7 +54,6 @@ void generate_S(const double nexo,
   //get nexo and Texo from the command line
   std::cout << "nexo = " << nexo << std::endl;
   std::cout << "Texo = " << Texo << std::endl;
-  double sH0=sH(Texo);//line center H cross section
 
   //get the Holstein T function
   //from pre-tabulated file
@@ -124,6 +123,7 @@ void generate_S(const double nexo,
   double tray, pray; // working angles for each point
   double line_x,line_y,line_z; //unit vector along the line of interest
   double rpt, tpt, ppt; // spherical coordinates of the auxiliary grid point
+  double trpt, ttpt, tppt; // temporary spherical coordinates used if (!inloop)
   double s, ds, si, sf; // ephemeral distance and distance across volume
   double tauH, tauCO2; // optical depth
   double domega; // differential solid angle
@@ -131,6 +131,7 @@ void generate_S(const double nexo,
   double coef,tcoef; // influence coeffecient computed between atmospheric
                      // point and auxiliary grid points
   double nH1,nH2,nCO21,nCO22;//temporary densities for trapezoidal line integration
+  double sH01,sH02;          //temporary line-center cross-sections
   // variables for single scattering function
   VecDoub r1_vec(3), r2_vec(3); // vectors for line integration
   double tauHcol, tauCO2col;
@@ -208,12 +209,15 @@ void generate_S(const double nexo,
 	    
 	    // initialize the variables
 	    s = 0.0;// s = 0 at start of integration
+	    tauH = 0.0;
+	    tauCO2 = 0.0;
 	    rpt = r1;// first point is grid point itself
 	    tpt = t1;
 	    ppt = p1;
 
 	    nH1=thisatmointerp.nH(rpt,tpt,ppt);
 	    nCO21=thisatmointerp.nCO2(rpt,tpt,ppt);
+	    sH01 =sH(Temp(rpt,thisatmointerp.Texo));
 
 	    coef = 0.0;// this changes soon
 	    iter = 0;
@@ -244,20 +248,20 @@ void generate_S(const double nexo,
 	      opdx=pterp.index(ppt);
 	      pdx=opdx;
 
-	      // std::cout << "Ray tray = " << tray << ", pray = " << pray << ":\n"
-	      // 		<< "Starting in box {" << ordx << ", " 
-	      // 		<< otdx << ", " 
-	      // 		<< opdx << "}\n";
+	      /* std::cout << "Ray tray = " << tray << ", pray = " << pray << ":\n" */
+	      /* 		<< "Starting in box {" << ordx << ", "  */
+	      /* 		<< otdx << ", "  */
+	      /* 		<< opdx << "}\n"; */
 	      
 	      /* std::cout <<"Here, \n" */
-	      /* 	        <<" r=[" << rpts[rdx]  */
-	      /* 	        << ", " << rpts[rdx+1]  */
+	      /* 	        <<" r=[" << rpts[rdx] */
+	      /* 	        << ", " << rpts[rdx+1] */
 	      /* 	        << "]" << std::endl; */
-	      /* std::cout <<" t=[" << thetapts[tdx]  */
-	      /* 		<< ", " << thetapts[rdx+1]  */
+	      /* std::cout <<" t=[" << thetapts[tdx] */
+	      /* 		<< ", " << thetapts[rdx+1] */
 	      /* 		<< "]" <<std::endl; */
-	      /* std::cout <<" p=[" << phipts[pdx]  */
-	      /* 		<< ", " << phipts[pdx+1]  */
+	      /* std::cout <<" p=[" << phipts[pdx] */
+	      /* 		<< ", " << phipts[pdx+1] */
 	      /* 		<< "]" << std::endl; */
 
 	      //get the step size for this box
@@ -270,12 +274,13 @@ void generate_S(const double nexo,
 	      ds = ds < dsfrac*dt ? ds : dsfrac*dt;
 	      ds = ds < dsfrac*dp ? ds : dsfrac*dp;
 	      
-	      ds = ds < dtau/(sH0*nH1) ? ds : dtau/(sH0*nH1);
+	      ds = ds < dtau/(sH01*nH1) ? ds : dtau/(sH01*nH1);
 
-	      // std::cout << "dr = " << dr << std::endl;
-	      // std::cout << "dt = " << dt << std::endl;
-	      // std::cout << "dp = " << dp << std::endl;
-	      // std::cout << "ds = " << ds << std::endl;
+	      /* std::cout << "dr = " << dr << std::endl; */
+	      /* std::cout << "dt = " << dt << std::endl; */
+	      /* std::cout << "dp = " << dp << std::endl; */
+	      /* std::cout << "ds = " << ds << std::endl; */
+	      //	      std::cin.get();
 
 	      si=s;
 	      while (rdx==ordx&&tdx==otdx&&pdx==opdx) {
@@ -291,27 +296,45 @@ void generate_S(const double nexo,
 		tpt = std::acos(zpt/rpt);
 		ppt = std::atan2(ypt,xpt);
 		
+		if (inloop) {
+		  nH2  =thisatmointerp.nH(rpt,tpt,ppt);
+		  nCO22=thisatmointerp.nCO2(rpt,tpt,ppt);
+		  sH02 =sH(Temp(rpt,thisatmointerp.Texo));
+		  
+		  tauH   += ds* (sH01*nH1+sH02*nH2)/2;
+		  tauCO2 += ds*sCO2*(nCO21+nCO22)/2;
+		  coef   += HolG_lookup.interp(tauH)*exp(-tauCO2)*ds;
+		  
+		  nH1=nH2;
+		  nCO21=nCO22;
+		  sH01=sH02;
+		  
+		  ds = ds < dtau/(sH02*nH2) ? ds : dtau/(sH02*nH2);
+		}
+
 		rdx=rterp.index(rpt);
 		tdx=tterp.index(tpt);
 		pdx=pterp.index(ppt);
-
-		if (innerloopabs) {
-		  nH2=thisatmointerp.nH(rpt,tpt,ppt);
-		  nCO22=thisatmointerp.nH(rpt,tpt,ppt);
-		  		  
-		  tauH  +=ds* sH0*(nH1+nH2)/2;
-		  tauCO2+=ds*sCO2*(nCO21+nCO22)/2;
-		  coef+=HolG_lookup.interp(tauH)*exp(-tauCO2)*ds;
-
-		  nH1=nH2;
-		  nCO21=nCO22;
-		}
-
-		ds = ds < dtau/(sH0*nH1) ? ds : dtau/(sH0*nH1);
 		
 		if (rpt>rmax||rpt<rmin)  break;
 	      }
 	      sf=s;
+
+	      if (!inloop) {
+		trpt=(rpts[ordx]+rpts[rdx])/2;
+	        ttpt=(thetapts[otdx]+thetapts[tdx])/2;
+		if (phipts[opdx]-phipts[pdx] > 3*pi/2) {
+		  //points are on opposite sides of the singularity at 0,2pi
+		  tppt = (phipts[opdx]+phipts[pdx]-2*pi)/2;
+		  tppt = tppt<0 ? -tppt : tppt;
+
+		}
+		nH2  =thisatmointerp.nH(rpt,tpt,ppt);
+		nCO22=thisatmointerp.nCO2(rpt,tpt,ppt);
+		sH02 =sH(Temp(rpt,thisatmointerp.Texo));
+		coef =(HolT_lookup.interp(nH2*sH02*si)*exp(-sCO2*si)
+		       -HolT_lookup.interp(nH2*sH02*sf)*exp(-sCO2*sf))/(nH2*sH02);
+	      }
 
 	      // std::cout << "si = " << si << std::endl;
 	      // std::cout << "sf = " << sf << std::endl;
@@ -321,27 +344,11 @@ void generate_S(const double nexo,
 	      // 		<< pdx << ".\n";
 	      // std::cin.get();
 	      
-	      if (!innerloopabs) {
-		//get the differential optical depth across this grid point
-		coef=sH0*thisatmointerp.nH((rpts[ordx]+rpts[ordx+1])/2,
-					   (thetapts[otdx]+thetapts[otdx+1])/2,
-					   (phipts[opdx]+phipts[opdx+1])/2);
-		// std::cout << "coef (sH0*nH) = " << coef << std::endl;
-		
-		tcoef=sCO2*thisatmointerp.nCO2((rpts[ordx]+rpts[ordx+1])/2,
-					       (thetapts[otdx]+thetapts[otdx+1])/2,
-					       (phipts[opdx]+phipts[opdx+1])/2);
-		coef=(HolT_lookup.interp(si*coef)*exp(-si*tcoef)
-		      -HolT_lookup.interp(sf*coef)*exp(-sf*tcoef))/coef;
-		// std::cout << "coef (HolTi-HolTf)/(sH0*nH) = " << coef << std::endl;
-	      }
 	      coef*=domega;
 	      //multiply by the number of scatterers at the original gridpoint
-	      coef*=sH0*thisatmointerp.nH(r1, t1, p1);
+	      coef*=sH(Temp(r1,thisatmointerp.Texo))*thisatmointerp.nH(r1, t1, p1);
 	      // std::cout << "coef (HolTi-HolTf)/(sH0*nH)*domega*exp(-tCO2)*sH0*nH0 =" 
 	      // 		<< coef << std::endl;
-	      
-
 	      
 	      col=ordx*(nthetapts-1)*(nphipts-1)+otdx*(nphipts-1)+opdx;
 	      kvals[row][col]+=coef;
@@ -398,7 +405,7 @@ void generate_S(const double nexo,
 
       // put them together into the y-vec
       //std::cout << "irw = " << irw << std::endl;
-      yvec[row] = thisatmointerp.nH(r1)*HolT_lookup.interp(tauHcol)*std::exp(-tauCO2col);
+      yvec[row] = thisatmointerp.nH(r1)*HolT_lookup.interp(tauHcol)*exp(-tauCO2col);
       //    yvec[row] = 0.0;
       //    std::cin.get();
     }

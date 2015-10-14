@@ -383,7 +383,7 @@ Holinterp(string Holfilenamee)
     Hol_interp = Linear_interp(tau_vec,Hol_vec);
   }
 
-  double interp(double tau) {
+  double interp(const double tau) {
     return Hol_interp.interp(tau);
   }
 };

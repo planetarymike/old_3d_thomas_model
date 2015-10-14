@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
   double Texo=1.0;
   bool userdens=FALSE;
   double nexo=1.0;
-  bool simulate_IPH=FALSE;
+  bool simulate_IPH=FALSE;//IPH model not yet integrated with this code!
   bool forcesim=FALSE;
   
   for (int i = 1; i < argc; i++)  /* Skip argv[0] (program name). */
@@ -71,6 +71,8 @@ int main(int argc, char* argv[]) {
         }
       else if (strcmp(argv[i], "-simIPH") == 0)
         {
+	  std::cout << "Warning! Quemerais IPH background model is not yet" 
+		    << " integrated with this coronal simulator!";
 	  simulate_IPH=TRUE;
         }
       else if (strcmp(argv[i], "-forcesim") == 0)
