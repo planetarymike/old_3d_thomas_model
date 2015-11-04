@@ -89,7 +89,17 @@ const bool inloop=TRUE;//bad things happen if FALSE
 //use chaufray hydrogen density?
 const bool usechauH = FALSE;
 
+//grid definitions (for interpolating source functions)
+//grid is populated on demand as source functions are requested.
+const double     nHi=10000;
+const double     nHf=1000000;
+const int        nnH=100;
+const bool nHgridlog=TRUE;
 
+const double      Ti=100;
+const double      Tf=2000;
+const int         nT=191;
+const bool  Tgridlog=FALSE;
 
   
 //define the HolG and HolT interpolation function locations
