@@ -24,7 +24,7 @@ public:
   double ***mat;
   int d1, d2, d3;
     
-  doub3d() {mat=NULL;}
+  doub3d() {mat=NULL;d1=0;d2=0;d3=0;}
   doub3d(int d11, int d22, int d33) : d1(d11), d2(d22), d3(d33) {
     mat = new double**[d1];
     for (int i1=0; i1<d1; i1++) {
@@ -47,8 +47,7 @@ public:
 
   double** operator[](int i) { return mat[i]; }
 
-  doub3d&
-  operator=(const doub3d &M) {
+  doub3d& operator=(const doub3d &M) {
     d1=M.d1;
     d2=M.d2;
     d3=M.d3;

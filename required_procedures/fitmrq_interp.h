@@ -9,7 +9,7 @@
 #include "nr3.h"
 #include "gaussj.h"
 //#include <iostream>
-#include "obs_interp.h"
+#include "corona_simulator.h"
 
 struct Fitmrq {
   //this object performs non-linear least-squares fitting using the LM
@@ -23,7 +23,7 @@ struct Fitmrq {
   int ndat, ma, mfit; //number of data points, parameters
   VecDoub_I &x, &y, &sig;//point coordinates and uncertainities
   double tol;//optional convergence parameter, possibly user-specified
-  obs_interp *thisobs;
+  corona_simulator sim;
   //^^^this function represents the user-supplied model to be fitted
   VecBool ia;//boolean wheter to fit each parameter
   VecDoub a;//model parameters
@@ -36,9 +36,9 @@ struct Fitmrq {
   //parameter guess, and model function as inputs
   Fitmrq(VecDoub_I &xx, VecDoub_I &yy, VecDoub_I &ssig,
 	 VecDoub_I &aa,
-	 obs_interp &thisobss,
+	 corona_simulator &simm,
 	 const double TOL=1.e-3) : ndat(xx.size()), ma(aa.size()),
-				   x(xx), y(yy), sig(ssig), thisobs(&thisobss),
+				   x(xx), y(yy), sig(ssig), sim(simm),
 				   tol(TOL), ia(ma), alpha(ma,ma),
 				   a(aa), covar(ma,ma) {
     for (int i = 0; i < ma; i++) ia[i] = true;
@@ -162,7 +162,7 @@ struct Fitmrq {
     chisq = 0.0; //initialize chisq
     for (i = 0; i < ndat; i++) { // loop over all data
       //      std::cout << "\n\nIn mrqcof, i = " << i << std::endl; 
-      (*thisobs)(x[i],a,ymod,dyda); //get the local fit value and derivs
+      sim(x[i],a,ymod,dyda); //get the local fit value and derivs
       //      std::cout << "\t x[i] = " << x[i] << std::endl; 
       //      std::cout << "\t ymod = " << ymod << std::endl; 
       sig2i = 1.0/(sig[i]*sig[i]); //inverse variance

@@ -28,8 +28,9 @@ int main(int argc, char* argv[]) {
   double Texo=1.0;
   bool userdens=FALSE;
   double nexo=1.0;
-  bool simulate_IPH=FALSE;//IPH model not yet integrated with this code!
+  bool simulate_IPH=FALSE;
   bool forcesim=FALSE;
+  bool nointerp=FALSE;
   
   for (int i = 1; i < argc; i++)  /* Skip argv[0] (program name). */
     {
@@ -42,8 +43,6 @@ int main(int argc, char* argv[]) {
 	   */
 	  i++;
 	  IPHb = atof(argv[i]);  /* Convert string to int. */
-	  std::cout << "Fixing background IPH at " << IPHb << " kR.\n";
-	  std::cout << std::endl;
 	}
       else if (strcmp(argv[i], "-c") == 0)
         {
@@ -71,13 +70,15 @@ int main(int argc, char* argv[]) {
         }
       else if (strcmp(argv[i], "-simIPH") == 0)
         {
-	  std::cout << "Warning! Quemerais IPH background model is not yet" 
-		    << " integrated with this coronal simulator!";
 	  simulate_IPH=TRUE;
         }
       else if (strcmp(argv[i], "-forcesim") == 0)
         {
 	  forcesim=TRUE;
+        }
+      else if (strcmp(argv[i], "-nointerp") == 0)
+        {
+	  nointerp=TRUE;
         }
       else
 	{
@@ -87,41 +88,56 @@ int main(int argc, char* argv[]) {
         }
     }
 
-  if (!userIPH) {
-    IPHb=0.0;
+  if (userIPH) {
+    if (simulate_IPH) {
+      std::cout << "Fixing background IPH multiplier at " << IPHb << " .\n";
+      std::cout << std::endl;
+    } else {
+      std::cout << "Fixing background IPH at " << IPHb << " kR.\n";
+      std::cout << std::endl;
+    }
+  } else {
+    if (simulate_IPH) {
+      IPHb=1.0;
+    } else {
+      IPHb=0.0;
+    }
   }
   if (!usercal) {
     cal=1.0;
   }
 
   corona_simulator sim;
-  //direct simulation for these conditions
-  sim.obs_import(obsname);//load the observation
-  sim.get_S(nexo,Texo,forcesim);//load or simulate the source function
-  std::cout << "current_Sinit = " << sim.current_Sinit << std::endl;
-  sim.calc_I(IPHb);//calculate with background
+  if (nointerp) {
+    //direct simulation for these conditions
+    std::cout << "Direct simulation proceeding.\n";
+    sim.obs_import(obsname,simulate_IPH);//load the observation
+    sim.get_S(nexo,Texo,forcesim);//load or simulate the source function
+    std::cout << "current_Sinit = " << sim.current_Sinit << std::endl;
+    sim.calc_I(IPHb);//calculate with background
   
-  //print out the results:
-  std::cout << "\nHere's the result of the calculation:\n"
-  	    << "\nI_calc = [ ";
-  for (int i = 0; i < sim.nobs; i++)
-    std::cout << sim.current_I_calc[i] << ", ";
-  std::cout << "\b\b ]\n";
-  std::cout << "\n\nYou have reached the end of the program!\nGoodbye.\n\n";
-
-  //interpolated simulation
-  // sim.obs_import(obsname);//load the observation
-  // VecDoub I_calc;
-  // sim.interp_I(nexo, Texo, I_calc,IPHb, forcesim);//calculate with background
+    //print out the results:
+    std::cout << "\nHere's the result of the calculation:\n"
+	      << "\nI_calc = [ ";
+    for (int i = 0; i < sim.nobs; i++)
+      std::cout << sim.current_I_calc[i] << ", ";
+    std::cout << "\b\b ]\n";
+    std::cout << "\n\nYou have reached the end of the program!\nGoodbye.\n\n";
+  } else {
+    //interpolated simulation
+    std::cout << "Proceeding with interpolated computation.\n";
+    sim.obs_import(obsname,simulate_IPH);//load the observation
+    VecDoub I_calc;
+    sim.interp_I(nexo, Texo, I_calc,IPHb, forcesim);//calculate with background
   
-  // //print out the results:
-  // std::cout << "\nHere's the result of the calculation:\n"
-  // 	    << "\nI_calc = [ ";
-  // for (int i = 0; i < sim.nobs; i++)
-  //   std::cout << I_calc[i] << ", ";
-  // std::cout << "\b\b ]\n";
-  // std::cout << "\n\nYou have reached the end of the program!\nGoodbye.\n\n";
-
+    //print out the results:
+    std::cout << "\nHere's the result of the calculation:\n"
+	      << "\nI_calc = [ ";
+    for (int i = 0; i < sim.nobs; i++)
+      std::cout << I_calc[i] << ", ";
+    std::cout << "\b\b ]\n";
+    std::cout << "\n\nYou have reached the end of the program!\nGoodbye.\n\n";
+  }
 
   
   return 0; 

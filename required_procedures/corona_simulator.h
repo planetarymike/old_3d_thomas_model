@@ -15,24 +15,29 @@
 #include "rad_trans.h" // two-point column density, holstein t and g functions
 #include "iph_sim.h" 
 #include "generate_S.h"
+#include "iph_model_interface.h"
 
 struct corona_simulator {
 
   bool obsinit;
+  bool forcesim;
   string obsname;
   string obsfname;
   int nobs;
   double aMars; // Sun-Mars distance at time of obs, AU
   double Fsun_earth; // Solar flux at line center at Earth
+  double Fsun_quemerais; //solar flux for quemerais code
   double Fsun_mars; // Solar flux at line center at Mars, possibly calculated from above
+  VecDoub marspos;
   char datetime[1024];
 
+  VecDoub obs_vec;
   VecDoub I_obs, DI_obs;  // observed intensity (kR) and its uncertainty
   VecDoub alttan, SZAtan; // radius and SZA of tangent point
   VecDoub ra, dec, scvel; //ra and dec of los, and S/C SSB vel projected onto this direction
   MatDoub pos, dir; // position and LOS direction of spacecraft.
   IPHsim IPH; //IPH simulator
-  VecDoub IPHb; //storage for calculated IPH brightnesses
+  VecDoub IPHb_model; //storage for calculated IPH brightnesses
   
   VecDoub rpts, tpts, ppts;
 
@@ -59,7 +64,7 @@ struct corona_simulator {
   LOS_integrator LOS; //object to do line integration given S and tabulated HolT values
   
   //constructor
-  corona_simulator() : LOS(HolTfilename) {
+  corona_simulator(bool forcesimm=FALSE) : LOS(HolTfilename), forcesim(forcesimm) {
     //nothing is initialized at first
     obsinit  = 0;
     current_Sinit = 0;
@@ -88,11 +93,13 @@ struct corona_simulator {
     atmointerp_grid = new atmointerp*[nnH];
     Sinit_grid = new bool*[nnH];
     I_calc_grid = new VecDoub*[nnH];
+    IPHtrans_grid = new VecDoub*[nnH];
     for (int inH=0;inH<nnH;inH++) {
       S_grid[inH] = new Sobj[nT];
       atmointerp_grid[inH] = new atmointerp[nT];
       Sinit_grid[inH] = new bool[nT];
       I_calc_grid[inH] = new VecDoub[nT];
+      IPHtrans_grid[inH] = new VecDoub[nT];
       for (int iT=0;iT<nT;iT++)
 	Sinit_grid[inH][iT]=FALSE;
     }
@@ -104,14 +111,16 @@ struct corona_simulator {
       delete [] S_grid[inH];
       delete [] atmointerp_grid[inH];
       delete [] I_calc_grid[inH];
+      delete [] IPHtrans_grid[inH];
     }
     delete [] Sinit_grid;
     delete [] S_grid;
     delete [] atmointerp_grid;
     delete [] I_calc_grid;
+    delete [] IPHtrans_grid;
   }
   
-  void obs_import(string obsname) {
+  void obs_import(string obsname,bool simulate_iph=TRUE) {
     //loads data corresponding to an observation
     fstream obsfile;
     obsfile.open(obsname.c_str());//this assumes that the code is executing 
@@ -126,12 +135,22 @@ struct corona_simulator {
       /* std::cout << "aMars = " << aMars << std::endl; */
       obsfile >> Fsun_earth; // photons/s/m2/Angstrom Solar flux at line center at Earth
       Fsun_earth /= 1e4; // photons/s/cm2/Angstrom
+      Fsun_quemerais=Fsun_earth;
       Fsun_earth *= (1215.)*(1215e-8)/(3e10/*cm/s*/);// photons/s/cm2/Hz
       Fsun_mars = Fsun_earth/aMars/aMars;
       /* std::cout << "Fsun_mars = " << Fsun_mars << std::endl; */
+      marspos.resize(3);
+      obsfile >> marspos[0]; //ecliptic coordinates of Mars at the time of the observation
+      obsfile >> marspos[1]; //      these coordinates are used to determine the model 
+      obsfile >> marspos[2]; //      IPH brightness that seeds the background subtraction.
+      std::cout << "mars_pos = [" 
+		<< marspos[0] << ", " 
+		<< marspos[1] << ", "
+		<< marspos[2] << "]"<< std::endl;
       obsfile.getline(datetime,1024); // capture time of file (irrelevant for this code)
 
       //prepare vector parameters for read-in
+      obs_vec.resize(nobs);
       I_obs.resize(nobs);
       DI_obs.resize(nobs);
       alttan.resize(nobs);
@@ -141,12 +160,14 @@ struct corona_simulator {
       ra.resize(nobs);
       dec.resize(nobs);
       scvel.resize(nobs);
-     
+      IPHb_model.resize(nobs);
+      
       /* X axis points toward Sun!! */
       //loop over the number of observations, reading each in to the appropriate variable
       for (int row = 0; row < nobs; row++) {
 	//get data from file
 	obsfile >> row;
+	obs_vec[row] = row;
 	obsfile >> I_obs[row];
 	obsfile >> DI_obs[row];
 	obsfile >> pos[row][0];// km
@@ -163,6 +184,19 @@ struct corona_simulator {
 	obsfile >> ra[row];
 	obsfile >> dec[row];
 	obsfile >> scvel[row];
+
+	if(simulate_iph) {
+	  //get the iph brightness from the Quemerais model
+	  /* std::cout << "Getting brightness:\n" */
+	  /* 	    << "Fsun_earth = " << Fsun_quemerais << " photons/s/cm2/Angstrom\n" */
+	  /* 	    << "ra  [" << row << "] = " << ra[row] << "\n" */
+	  /* 	    << "dec [" << row << "] = " << dec[row] << "\n"; */
+	  IPHb_model[row] = quemerais_iph_model(Fsun_quemerais, marspos, ra[row], dec[row]);
+	  /* std::cout << " Brightness = " << IPHb_model[row] << std::endl; */
+	} else {
+	  //assume IPH is uniform across all observations in this file
+	  IPHb_model[row] = 1.0;
+	}
 			 
 	// std::cout << "On row " << row << ":\n";
 	// std::cout << "I_obs = " << I_obs[row] << " +- " << DI_obs[row] << " kR,\n";
@@ -195,8 +229,7 @@ struct corona_simulator {
   }
 
   void get_S(const double nH, const double T,
-	     Sobj& thisS,atmointerp& thisatmointerp,bool& thisSinit,
-	     bool forcesim=FALSE) {
+	     Sobj& thisS,atmointerp& thisatmointerp,bool& thisSinit) {
     /* tries to load S from file; if file not found, calculates and
        produces file for future use */
 
@@ -221,10 +254,25 @@ struct corona_simulator {
 
     return;
   }
-  void get_S(const double nH, const double T, bool forcesim=FALSE) {
-    get_S(nH, T, current_S, current_atmointerp, current_Sinit, forcesim);
+  void get_S(const double nH, const double T) {
+    get_S(nH, T, current_S, current_atmointerp, current_Sinit);
   }
   
+  double simulate_IPH_extinction(int iobs, double nH, double T) {
+    //simulate IPH extinction for a single point in altitude, density, temperature
+    /* std::cout << "Simulating coordinate iobs = " << iobs  */
+    /* 	      << ", inH =" << inH << ", iT = " << iT << ".\n"; */
+
+    double ttransfrac;
+    if (alttan[iobs]>200) {
+      ttransfrac = IPH.sim(1.0,nH,T,iobs);
+    } else {
+      ttransfrac = 0.0;
+    }
+    return ttransfrac;
+  }
+
+
   double simulate_iobs(int iobs, 
 		       Sobj &thisS, 
 		       atmointerp &thisatmointerp,
@@ -262,10 +310,10 @@ struct corona_simulator {
     //convert to rayleighs
     tIcalc /= 1e6;// megaphoton/cm2/s
     tIcalc *= 4*pi/1e3; // now we're in kR; see C&H pg. 280-282
-    
+
     //now add in the IPH
-    //    tIcalc += IPH.sim(IPHb,nH,T,iobs);
-    
+    tIcalc += IPHb*IPHb_model[iobs]*simulate_IPH_extinction(iobs, nH, T);
+
     return tIcalc;
       
     //	  std::cout << "tIcalc = " << tIcalc << "\n";
@@ -299,9 +347,15 @@ struct corona_simulator {
     std::cout << "calc_I current_Sinit = " << current_Sinit << "\n";
     calc_I(current_S, current_atmointerp, current_Sinit, current_I_calc, IPHb);
   }
+
+  void calc_IPHb_transmission(double nH, double T, VecDoub &thisIPHtrans){
+    thisIPHtrans.resize(nobs);
+    for (int iobs=0;iobs<nobs;iobs++)
+      thisIPHtrans[iobs]=IPHb_model[iobs]*simulate_IPH_extinction(iobs, nH, T);
+  }
   
   //check that intensities exist for interpolation, fill them in if they don't
-  void grid_init(int inH, int iT,double IPHb,bool forcesim=FALSE)
+  void grid_init(int inH, int iT)
   {
     for (int iinH=inH;iinH<=inH+1;iinH++) {
       for (int iiT=iT;iiT<=iT+1;iiT++) {
@@ -311,21 +365,24 @@ struct corona_simulator {
 		T_vec[iiT],
 		S_grid[iinH][iiT],
 		atmointerp_grid[iinH][iiT],
-		Sinit_grid[iinH][iiT],
-		forcesim);
+		Sinit_grid[iinH][iiT]);
 	  //calculate the intensities
 	  calc_I(S_grid[iinH][iiT],
 		 atmointerp_grid[iinH][iiT],
 		 Sinit_grid[iinH][iiT],
 		 I_calc_grid[iinH][iiT],
-		 IPHb);
+		 0.0);//IPHb=0 here because it is added in later by interp_iobs
+	  //calculate the IPH reduction factor
+	  calc_IPHb_transmission(nH_vec[iinH],
+				 T_vec[iiT],
+				 IPHtrans_grid[iinH][iiT]);
 	}
       }
     }
   }
 
   
-  double interp_iobs(int iobs, double nHp, double Tp, double IPHb=0.0,bool forcesim=FALSE) {
+  double interp_iobs(int iobs, double nHp, double Tp, double IPHb=0.0) {
     double iIcalc, iIPHtrans, anH, aT;
     //find the grid square:
     /* std::cout << "nH = " << nHp << std::endl; */
@@ -342,7 +399,7 @@ struct corona_simulator {
     // std::cout << "inH = " << inH << std::endl;
     // std::cout << "iT = " << iT << std::endl;    
     
-    grid_init(inH,iT,IPHb,forcesim);//simulate or load intensities
+    grid_init(inH,iT);//simulate or load intensities
     
     //interpolate:
     anH = (nHp-(nH_terp).xx[inH])/((nH_terp).xx[inH+1]-(nH_terp).xx[inH]);
@@ -362,22 +419,137 @@ struct corona_simulator {
     //in here. Otherwise, this factor was set to 1 in the initial load
     //of the obs_data and IPHb represents the brightness of the IPH
     //and not a multiplicative scaling factor.
-    // iIPHtrans =  (1.-anH)*(1.-aT)*corona_simulator_grid[inH  ][iT  ].IPHtrans[iobs]
-    //            +     anH *(1.-aT)*corona_simulator_grid[inH+1][iT  ].IPHtrans[iobs]
-    //            + (1.-anH)*    aT *corona_simulator_grid[inH  ][iT+1].IPHtrans[iobs]
-    //            +     anH *    aT *corona_simulator_grid[inH+1][iT+1].IPHtrans[iobs]
-    //    iIcalc += IPHb*iIPHtrans;
-    
+    iIPHtrans =  (1.-anH)*(1.-aT)*IPHtrans_grid[inH  ][iT  ][iobs]
+               +     anH *(1.-aT)*IPHtrans_grid[inH+1][iT  ][iobs]
+               + (1.-anH)*    aT *IPHtrans_grid[inH  ][iT+1][iobs]
+               +     anH *    aT *IPHtrans_grid[inH+1][iT+1][iobs];
+    iIcalc += IPHb*iIPHtrans;
+   
     return iIcalc;
   }
 
   void interp_I(double nHp, double Tp, 
-		VecDoub &thisI_calc,double IPHb=0.0, bool forcesim=FALSE) {
+		VecDoub &thisI_calc,double IPHb=0.0) {
 
     thisI_calc.resize(nobs);
     for (int iobs=0; iobs<nobs; iobs++)
-      thisI_calc[iobs]=interp_iobs(iobs, nHp, Tp, IPHb, forcesim);
+      thisI_calc[iobs]=interp_iobs(iobs, nHp, Tp, IPHb);
   }
+
+  double IPHtrans_interp(int iobs, double nHp, double Tp) {
+    int inH, iT;
+    double iIPHtrans, anH, aT;
+    //find the grid square:
+    inH = (nH_terp).cor ? (nH_terp).hunt(nHp) : (nH_terp).locate(nHp);
+    // std::cout << "inH = " << inH << std::endl;
+    // std::cout << "nH[" << inH << "] = " << (*nH_terp).xx[inH] << std::endl;
+    // std::cout << "nH[" << inH + 1 << "] = " << (*nH_terp).xx[inH + 1] << std::endl;
+    // std::cout << "T = " << Tp << std::endl;
+    iT = (T_terp).cor ? (T_terp).hunt(Tp) : (T_terp).locate(Tp);
+    // std::cout << "iT = " << iT << std::endl;
+    // std::cout << "T[" << iT << "] = " << (*T_terp).xx[iT] << std::endl;
+    // std::cout << "T[" << iT + 1 << "] = " << (*T_terp).xx[iT + 1] << std::endl;
+    
+    // std::cout << "inH = " << inH << std::endl;
+    // std::cout << "iT = " << iT << std::endl;    
+
+    grid_init(inH,iT);//simulate or load intensities
+    
+    //interpolate:
+    anH = (nHp-(nH_terp).xx[inH])/((nH_terp).xx[inH+1]-(nH_terp).xx[inH]);
+    aT = (Tp-(T_terp).xx[iT])/((T_terp).xx[iT+1]-(T_terp).xx[iT]);
+
+    /* std::cout << "anH = " << anH << std::endl; */
+    /* std::cout << "aT = " << aT << std::endl;     */
+    
+    //now add in the IPH for points with tangent altitudes above 200km
+    //if iph is simulated using the Quemerais code, it is multiplied
+    //in here. Otherwise, this factor was set to 1 in the initial load
+    //of the obs_data and IPHb represents the brightness of the IPH
+    //and not a multiplicative scaling factor.
+    iIPHtrans =  (1.-anH)*(1.-aT)*IPHtrans_grid[inH  ][iT  ][iobs]
+               +     anH *(1.-aT)*IPHtrans_grid[inH+1][iT  ][iobs]
+               + (1.-anH)*    aT *IPHtrans_grid[inH  ][iT+1][iobs]
+               +     anH *    aT *IPHtrans_grid[inH+1][iT+1][iobs];
+    
+    return iIPHtrans;
+  }
+
+  void derivs(int iobs, double nHp, double Tp, double IPHb, VecDoub_O &dIcalc) {
+    //find the grid square:
+    int inH = (nH_terp).cor ? (nH_terp).hunt(nHp) : (nH_terp).locate(nHp);
+    int iT = (T_terp).cor ? (T_terp).hunt(Tp) : (T_terp).locate(Tp);
+
+    grid_init(inH,iT);//simulate or load intensities
+    
+    double nH1=(nH_terp).xx[inH];
+    double nH2=(nH_terp).xx[inH+1];
+    double T1=(T_terp).xx[iT];
+    double T2=(T_terp).xx[iT+1];
+
+    double fnH=(nHp-nH1)/(nH2-nH1);
+    double fT=(Tp-T1)/(T2-T1);
+
+    double I11=I_calc_grid[inH  ][iT  ][iobs];
+    double I12=I_calc_grid[inH  ][iT+1][iobs];
+    double I21=I_calc_grid[inH+1][iT  ][iobs];
+    double I22=I_calc_grid[inH+1][iT+1][iobs];
+
+    double trans11=IPHtrans_grid[inH  ][iT  ][iobs];
+    double trans12=IPHtrans_grid[inH  ][iT+1][iobs];
+    double trans21=IPHtrans_grid[inH+1][iT  ][iobs];
+    double trans22=IPHtrans_grid[inH+1][iT+1][iobs];
+
+    //we must bilinearly interpolate the derivatives
+    //intensity
+    double dIdnH, dIdT;
+    dIdnH  = (1.-fT)*(I21-I11);
+    dIdnH +=     fT *(I22-I12);
+    dIdnH /= (nH2-nH1);
+
+    dIdT  = (1.-fnH)*(I12-I11);
+    dIdT +=     fnH *(I22-I21);
+    dIdT /= (T2-T1);
+
+    //transmission
+    double dtransdnH, dtransdT;
+    dtransdnH  = (1.-fT)*(trans21-trans11);
+    dtransdnH +=     fT *(trans22-trans12);
+    dtransdnH /= (nH2-nH1);
+
+    dtransdT  = (1.-fnH)*(trans12-trans11);
+    dtransdT +=     fnH *(trans22-trans21);
+    dtransdT /= (T2-T1);
+
+    dIcalc[0] = dIdnH + IPHb*dtransdnH;
+    dIcalc[1] = dIdT  + IPHb*dtransdT;
+  }
+
+  //this is used for the chi-square minimzation by L-M
+  void operator()(const double obsp, VecDoub_I &a, double &iIcalc, VecDoub_O &dIcalcda)
+  {
+    double nHp = a[0];
+    double Tp = a[1];
+    double IPHb = a[2];
+    double cal = a[3];
+    
+    double tempcalc = interp_iobs(obsp, nHp, Tp, IPHb);
+    iIcalc = tempcalc*cal;
+
+    VecDoub dItemp(2);
+    derivs(obsp, nHp, Tp, IPHb, dItemp);
+    dIcalcda[0]=dItemp[0];
+    dIcalcda[1]=dItemp[1];
+    //the derivative wrt the IPH parameter is computed as the product
+    //of the transmission and the iphb_calc parameter. If IPHb is a
+    //multiplicative factor on the simulated brightness, this
+    //multplies in the brightness simulated. If IPHb is a scalar
+    //background, iphb_calc is set to 1 in the initial load of the
+    //obs_data.
+    dIcalcda[2]=IPHtrans_interp(obsp, nHp, Tp);
+    dIcalcda[3]=tempcalc;
+  }
+
 
 
   
