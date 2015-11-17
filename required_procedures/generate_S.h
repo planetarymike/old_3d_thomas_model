@@ -17,7 +17,8 @@
 #include "los.h" //Holstein lookups, column intergrals
 #include "ludcmp.h" // LU decomposition solver
 #include "interpgen.h" // runtime hydrogen interpolation
-
+#include <limits> //sizes of double
+typedef std::numeric_limits< double > dbl;
 using std::cos;
 using std::sin;
 
@@ -110,12 +111,12 @@ void generate_S(const double nexo,
   string solfname;
   solfname = Sfilename(nexo,Texo);
   solfile.open(solfname.c_str());
-  ofstream kfile, yfile;
-  string kfilename, yfilename;
-  kfilename = auxfilename("kern",nexo,Texo);
-  kfile.open(kfilename.c_str());
-  yfilename = auxfilename("y",nexo,Texo);
-  yfile.open(yfilename.c_str());
+  /* ofstream kfile, yfile; */
+  /* string kfilename, yfilename; */
+  /* kfilename = auxfilename("kern",nexo,Texo); */
+  /* kfile.open(kfilename.c_str()); */
+  /* yfilename = auxfilename("y",nexo,Texo); */
+  /* yfile.open(yfilename.c_str()); */
   
   // auxiliary variables used in computing integrals
   double x1, y1, z1, xpt, ypt, zpt; // ephemeral cartesian coordinates
@@ -447,63 +448,67 @@ void generate_S(const double nexo,
   solfile.width(20);
   solfile << nrpts << std::endl;
   for (irw = 0; irw < nrpts; irw++) {
-    solfile.width(20);
+    solfile.width(dbl::digits10+5);
+    solfile.precision(dbl::digits10);
     solfile << rpts[irw];
   }
   solfile << std::endl;
   solfile.width(20);
   solfile << nthetapts << std::endl;
   for (itw = 0; itw < nthetapts; itw++) {
-    solfile.width(20);
+    solfile.width(dbl::digits10+5);
+    solfile.precision(dbl::digits10);
     solfile << thetapts[itw];
   }
   solfile << std::endl;
   solfile.width(20);
   solfile << nphipts << std::endl;
   for (ipw = 0; ipw < nphipts; ipw++) {
-    solfile.width(20);
+    solfile.width(dbl::digits10+5);
+    solfile.precision(dbl::digits10);
     solfile << phipts[ipw];
   }
   solfile << std::endl;
   //finally, the values
   for (row = 0; row < nrows; row++) {
-    solfile.width(20);
+    solfile << solfile.width(dbl::digits10+5);
+    solfile.precision(dbl::digits10);
     solfile << sol[row] << std::endl;
   }
 
   //write kernel and yvec to file;
-  std::cout << "Writing kernel and single scattering vector to file." << std::endl;
-  for (row = 0; row < nrows; row++) {
-    for (col = 0; col < ncols; col++) {
-      //	Hfile.width(20);
-      //	Hfile << nHvals[row][col];
-      //	CO2file.width(20);
-      //	CO2file << nCO2vals[row][col];
-      kfile.width(20);
-      kfile << kvals[row][col];
-    }
-    //      Hfile << std::endl;
-    //      CO2file << std::endl;
-    kfile << std::endl;
+  /* std::cout << "Writing kernel and single scattering vector to file." << std::endl; */
+  /* for (row = 0; row < nrows; row++) { */
+  /*   for (col = 0; col < ncols; col++) { */
+  /*     //	Hfile.width(20); */
+  /*     //	Hfile << nHvals[row][col]; */
+  /*     //	CO2file.width(20); */
+  /*     //	CO2file << nCO2vals[row][col]; */
+  /*     kfile.width(20); */
+  /*     kfile << kvals[row][col]; */
+  /*   } */
+  /*   //      Hfile << std::endl; */
+  /*   //      CO2file << std::endl; */
+  /*   kfile << std::endl; */
 
 
-    irw = row/((nthetapts-1)*(nphipts-1));
-    itw = (row-irw*(nthetapts-1)*(nphipts-1))/(nphipts-1);
-    ipw = row%(nphipts-1);
-    r1 = (rpts[irw]+rpts[irw+1])/2;
-    t1 = (thetapts[itw]+thetapts[itw+1])/2;
-    p1 = (phipts[ipw]+phipts[ipw+1])/2;
-    yfile.width(20);
-    yfile << r1;
-    yfile.width(20);
-    yfile << t1;
-    yfile.width(20);
-    yfile << p1;
-    yfile.width(20);
-    yfile << yvec[row] << std::endl;
-  }
-  kfile.close();
-  yfile.close();
+  /*   irw = row/((nthetapts-1)*(nphipts-1)); */
+  /*   itw = (row-irw*(nthetapts-1)*(nphipts-1))/(nphipts-1); */
+  /*   ipw = row%(nphipts-1); */
+  /*   r1 = (rpts[irw]+rpts[irw+1])/2; */
+  /*   t1 = (thetapts[itw]+thetapts[itw+1])/2; */
+  /*   p1 = (phipts[ipw]+phipts[ipw+1])/2; */
+  /*   yfile.width(20); */
+  /*   yfile << r1; */
+  /*   yfile.width(20); */
+  /*   yfile << t1; */
+  /*   yfile.width(20); */
+  /*   yfile << p1; */
+  /*   yfile.width(20); */
+  /*   yfile << yvec[row] << std::endl; */
+  /* } */
+  /* kfile.close(); */
+  /* yfile.close(); */
 
   
   // print time elapsed

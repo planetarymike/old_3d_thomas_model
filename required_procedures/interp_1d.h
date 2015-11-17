@@ -29,7 +29,7 @@ struct Base_interp
       yy[i]=y[i];
     }
     
-    dj = MIN(1, (int) pow((double) n, 0.25) );
+    dj = NR_MIN(1, (int) pow((double) n, 0.25) );
   }
 
   Base_interp(const Base_interp &B) {
@@ -131,7 +131,7 @@ int Base_interp::locate(const double x)
   cor = abs(jl-jsav) > dj ? 0 : 1; // decide whether to use hunt() or
 				   // locate() next time
   jsav = jl;
-  return MAX(0,MIN(n-mmm,jl-((mmm-2)>>1)));
+  return NR_MAX(0,NR_MIN(n-mmm,jl-((mmm-2)>>1)));
 }
 
 
@@ -187,7 +187,7 @@ int Base_interp::hunt(const double x)
   cor = abs(jl - jsav) > dj ? 0 : 1; // decide whether to use hunt or
 				     // locate next time
   jsav = jl;
-  return MAX(0,MIN(n-mmm,jl-((mmm-2)>>1)));
+  return NR_MAX(0,NR_MIN(n-mmm,jl-((mmm-2)>>1)));
 }
 
 struct Linear_interp : Base_interp

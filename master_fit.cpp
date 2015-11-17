@@ -1,8 +1,5 @@
 //master_fit.cpp -- fitting routines
 
-#include <mpi.h> // parallelization; required for compilation of
-                 // interpgen. Needs to be at top of #include stack for
-                 // proper compilation
 #include <iostream>
 #include <fstream>
 #include "nr3.h"

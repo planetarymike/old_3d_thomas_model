@@ -1,12 +1,12 @@
 //iph_model_interface.cpp -- routine to call Quemerais fortran IPH model from C++
 
 #include <cmath>
-
+//#include "ipbackgroundCFR_fun.h"
 using std::cos;
 using std::sin;
 
 
-//fortran function prototype
+/* //fortran function prototype */
 extern "C" {
   void background_(float *lc,
 		   float *x_pos,float *y_pos,float *z_pos,

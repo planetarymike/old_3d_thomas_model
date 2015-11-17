@@ -9,7 +9,7 @@
 // all the system #include's we'll ever need
 #include <fstream>
 #include <cmath>
-#include <complex>
+//#include <complex>
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -29,23 +29,23 @@ template<class T>
 inline T SQR(const T a) {return a*a;}
 
 template<class T>
-inline const T &MAX(const T &a, const T &b)
+inline const T &NR_MAX(const T &a, const T &b)
         {return b > a ? (b) : (a);}
 
-inline float MAX(const double &a, const float &b)
+inline float NR_MAX(const double &a, const float &b)
         {return b > a ? (b) : float(a);}
 
-inline float MAX(const float &a, const double &b)
+inline float NR_MAX(const float &a, const double &b)
         {return b > a ? float(b) : (a);}
 
 template<class T>
-inline const T &MIN(const T &a, const T &b)
+inline const T &NR_MIN(const T &a, const T &b)
         {return b < a ? (b) : (a);}
 
-inline float MIN(const double &a, const float &b)
+inline float NR_MIN(const double &a, const float &b)
         {return b < a ? (b) : float(a);}
 
-inline float MIN(const float &a, const double &b)
+inline float NR_MIN(const float &a, const double &b)
         {return b < a ? float(b) : (a);}
 
 template<class T>
@@ -100,10 +100,11 @@ void NRcatch(NRerror err) {
 
 template <class T>
 class NRvector {
-private:
+ private:
+
+ public:
 	int nn;	// size of array. upper index is nn-1
 	T *v;
-public:
 	NRvector();
 	explicit NRvector(int n);		// Zero-based array
 	NRvector(int n, const T &a);	//initialize to constant value
@@ -484,7 +485,7 @@ typedef unsigned char Uchar;
 typedef double Doub; // default floating type
 typedef long double Ldoub;
 
-typedef complex<double> Complex; // default complex type
+//typedef complex<double> Complex; // default complex type
 
 typedef bool Bool;
 
@@ -527,8 +528,8 @@ typedef NRvector<Doub> VecDoub, VecDoub_O, VecDoub_IO;
 typedef const NRvector<Doub*> VecDoubp_I;
 typedef NRvector<Doub*> VecDoubp, VecDoubp_O, VecDoubp_IO;
 
-typedef const NRvector<Complex> VecComplex_I;
-typedef NRvector<Complex> VecComplex, VecComplex_O, VecComplex_IO;
+/* typedef const NRvector<Complex> VecComplex_I;
+/* typedef NRvector<Complex> VecComplex, VecComplex_O, VecComplex_IO; */
 
 typedef const NRvector<Bool> VecBool_I;
 typedef NRvector<Bool> VecBool, VecBool_O, VecBool_IO;

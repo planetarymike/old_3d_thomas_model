@@ -39,8 +39,6 @@ struct corona_simulator {
   IPHsim IPH; //IPH simulator
   VecDoub IPHb_model; //storage for calculated IPH brightnesses
   
-  VecDoub rpts, tpts, ppts;
-
   double lineintcoef;//intensity line integral coefficient ~"g-value"
 
   //for a single number density and temperature, a single S, atmointerp, Icalc
@@ -237,12 +235,15 @@ struct corona_simulator {
 	//what would the filename look like?
 	string Sfname=Sfilename(nH,T);
 	ifstream Sfile(Sfname.c_str());
-	if (Sfile.good()) {
-	  Sfile.close();
-	  thisS=Sobj(Sfname);
-	  //if S file exists, atmointerp does too.
-	  thisatmointerp = atmointerp(thisS.nH,thisS.T,nphyspts);
-	  thisSinit=1;
+	if (Sfile.good()) { //file named like this exists?
+	  Sfile.seekg(0, ios::end);
+	  if (Sfile.tellg() != 0) { //file length isn't zero?
+	    Sfile.close();
+	    thisS=Sobj(Sfname);
+	    //if S file exists, atmointerp does too.
+	    thisatmointerp = atmointerp(thisS.nH,thisS.T,nphyspts);
+	    thisSinit=1;
+	  }
 	}
 	Sfile.close();
     }

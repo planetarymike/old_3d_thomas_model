@@ -124,7 +124,7 @@ struct Fitmrq {
       for (j = 0, l = 0; l < ma; l++) //increment (non-constant) parameters by da
 	if (ia[l]) atry[l] = a[l] + da[j++];
       mrqcof(atry, covar, da); //determine new curvature matrix, gradient, and chi2
-      if (abs(chisq-ochisq) < MAX(tol, tol*chisq)) done++; //if the
+      if (abs(chisq-ochisq) < NR_MAX(tol, tol*chisq)) done++; //if the
 							   //step is
 							   //too
 							   //small,
