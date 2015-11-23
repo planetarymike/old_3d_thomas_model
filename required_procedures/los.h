@@ -427,6 +427,7 @@ struct LOS_integrator
     double rrpt = r0;// first radial point
     double tpt = std::acos(x0/r0);// first theta point
     double ppt = std::atan2(y0, z0);// first phi point
+    ppt = ppt < 0 ? ppt+2*pi : ppt;// put phi in the right domain
     double xpt = x0;
     double ypt = y0;
     double zpt = z0;
@@ -453,6 +454,7 @@ struct LOS_integrator
       rrpt = sqrt(xpt*xpt + ypt*ypt + zpt*zpt);
       tpt = std::acos(xpt/rrpt);
       ppt = std::atan2(ypt, zpt);
+      ppt = ppt < 0 ? ppt+2*pi : ppt;// put phi in the right domain
       std::cout << "Now rrpt = " << rrpt << ", tpt = " << tpt*180/pi << " degrees.\n";
       std::cin.get();
     }
@@ -510,6 +512,7 @@ struct LOS_integrator
       rrpt = sqrt(xpt*xpt + ypt*ypt + zpt*zpt);
       tpt = std::acos(xpt/rrpt);
       ppt = std::atan2(ypt, zpt);
+      ppt = ppt < 0 ? ppt+2*pi : ppt;// put phi in the right domain
     }
 
     //multiply by factors which are constant outside the integral

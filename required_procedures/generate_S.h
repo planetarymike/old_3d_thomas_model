@@ -296,6 +296,7 @@ void generate_S(const double nexo,
 		rpt = sqrt(xpt*xpt + ypt*ypt + zpt*zpt);
 		tpt = std::acos(zpt/rpt);
 		ppt = std::atan2(ypt,xpt);
+		ppt = ppt < 0 ? ppt+2*pi : ppt;// put phi in the right domain
 		
 		if (inloop) {
 		  nH2  =thisatmointerp.nH(rpt,tpt,ppt);
