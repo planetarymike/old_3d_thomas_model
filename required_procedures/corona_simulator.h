@@ -259,13 +259,13 @@ struct corona_simulator {
     get_S(nH, T, current_S, current_atmointerp, current_Sinit);
   }
   
-  double simulate_IPH_extinction(int iobs, double nH, double T) {
-    //simulate IPH extinction for a single point in altitude, density, temperature
+  double simulate_IPH_transmission(int iobs, double nH, double T) {
+    //simulate IPH transmission for a single point in altitude, density, temperature
     /* std::cout << "Simulating coordinate iobs = " << iobs  */
     /* 	      << ", inH =" << inH << ", iT = " << iT << ".\n"; */
 
     double ttransfrac;
-    if (alttan[iobs]>200) {
+    if (alttan[iobs]>120) {
       ttransfrac = IPH.sim(1.0,nH,T,iobs);
     } else {
       ttransfrac = 0.0;
@@ -313,7 +313,7 @@ struct corona_simulator {
     tIcalc *= 4*pi/1e3; // now we're in kR; see C&H pg. 280-282
 
     //now add in the IPH
-    tIcalc += IPHb*IPHb_model[iobs]*simulate_IPH_extinction(iobs, nH, T);
+    tIcalc += IPHb*IPHb_model[iobs]*simulate_IPH_transmission(iobs, nH, T);
 
     return tIcalc;
       
@@ -352,7 +352,7 @@ struct corona_simulator {
   void calc_IPHb_transmission(double nH, double T, VecDoub &thisIPHtrans){
     thisIPHtrans.resize(nobs);
     for (int iobs=0;iobs<nobs;iobs++)
-      thisIPHtrans[iobs]=IPHb_model[iobs]*simulate_IPH_extinction(iobs, nH, T);
+      thisIPHtrans[iobs]=IPHb_model[iobs]*simulate_IPH_transmission(iobs, nH, T);
   }
   
   //check that intensities exist for interpolation, fill them in if they don't
@@ -384,49 +384,56 @@ struct corona_simulator {
 
   
   double interp_iobs(int iobs, double nHp, double Tp, double IPHb=0.0) {
-    double iIcalc, iIPHtrans, anH, aT;
-    //find the grid square:
-    /* std::cout << "nH = " << nHp << std::endl; */
-    int inH = (nH_terp).cor ? (nH_terp).hunt(nHp) : (nH_terp).locate(nHp);
-    // std::cout << "inH = " << inH << std::endl;
-    // std::cout << "nH[" << inH << "] = " << (*nH_terp).xx[inH] << std::endl;
-    // std::cout << "nH[" << inH + 1 << "] = " << (*nH_terp).xx[inH + 1] << std::endl;
-    // std::cout << "T = " << Tp << std::endl;
-    int iT = (T_terp).cor ? (T_terp).hunt(Tp) : (T_terp).locate(Tp);
-    // std::cout << "iT = " << iT << std::endl;
-    // std::cout << "T[" << iT << "] = " << (*T_terp).xx[iT] << std::endl;
-    // std::cout << "T[" << iT + 1 << "] = " << (*T_terp).xx[iT + 1] << std::endl;
-    
-    // std::cout << "inH = " << inH << std::endl;
-    // std::cout << "iT = " << iT << std::endl;    
-    
-    grid_init(inH,iT);//simulate or load intensities
-    
-    //interpolate:
-    anH = (nHp-(nH_terp).xx[inH])/((nH_terp).xx[inH+1]-(nH_terp).xx[inH]);
-    aT  = ( Tp-( T_terp).xx[ iT])/(( T_terp).xx[ iT+1]-( T_terp).xx[ iT]);
-
-    /* std::cout << "aobs = " << aobs << std::endl; */
-    /* std::cout << "anH = " << anH << std::endl; */
-    /* std::cout << "aT = " << aT << std::endl;     */
-    
-    iIcalc = (1.-anH)*(1.-aT)*I_calc_grid[inH  ][iT  ][iobs]
-            +    anH *(1.-aT)*I_calc_grid[inH+1][iT  ][iobs]
-            +(1.-anH)*    aT *I_calc_grid[inH  ][iT+1][iobs]
-            +    anH*     aT *I_calc_grid[inH+1][iT+1][iobs];
+    if (nHp<nHi||nHp>nHf||Tp<Ti||Tp>Tf) {
+      std::cout << "nH or T outside of parameter grid!\n"
+		<< " nH = " << nHp << std::endl
+		<< "  T = " <<  Tp << std::endl;
+      return -1;
+    } else {
+      double iIcalc, iIPHtrans, anH, aT;
+      //find the grid square:
+      /* std::cout << "nH = " << nHp << std::endl; */
+      int inH = (nH_terp).cor ? (nH_terp).hunt(nHp) : (nH_terp).locate(nHp);
+      // std::cout << "inH = " << inH << std::endl;
+      // std::cout << "nH[" << inH << "] = " << (*nH_terp).xx[inH] << std::endl;
+      // std::cout << "nH[" << inH + 1 << "] = " << (*nH_terp).xx[inH + 1] << std::endl;
+      // std::cout << "T = " << Tp << std::endl;
+      int iT = (T_terp).cor ? (T_terp).hunt(Tp) : (T_terp).locate(Tp);
+      // std::cout << "iT = " << iT << std::endl;
+      // std::cout << "T[" << iT << "] = " << (*T_terp).xx[iT] << std::endl;
+      // std::cout << "T[" << iT + 1 << "] = " << (*T_terp).xx[iT + 1] << std::endl;
+      
+      // std::cout << "inH = " << inH << std::endl;
+      // std::cout << "iT = " << iT << std::endl;    
+      
+      grid_init(inH,iT);//simulate or load intensities
+      
+      //interpolate:
+      anH = (nHp-(nH_terp).xx[inH])/((nH_terp).xx[inH+1]-(nH_terp).xx[inH]);
+      aT  = ( Tp-( T_terp).xx[ iT])/(( T_terp).xx[ iT+1]-( T_terp).xx[ iT]);
+      
+      /* std::cout << "aobs = " << aobs << std::endl; */
+      /* std::cout << "anH = " << anH << std::endl; */
+      /* std::cout << "aT = " << aT << std::endl;     */
+      
+      iIcalc = (1.-anH)*(1.-aT)*I_calc_grid[inH  ][iT  ][iobs]
+              +    anH *(1.-aT)*I_calc_grid[inH+1][iT  ][iobs]
+              +(1.-anH)*    aT *I_calc_grid[inH  ][iT+1][iobs]
+              +    anH*     aT *I_calc_grid[inH+1][iT+1][iobs];
 
     //now add in the IPH for points with tangent altitudes above 200km
     //if iph is simulated using the Quemerais code, it is multiplied
     //in here. Otherwise, this factor was set to 1 in the initial load
     //of the obs_data and IPHb represents the brightness of the IPH
     //and not a multiplicative scaling factor.
-    iIPHtrans =  (1.-anH)*(1.-aT)*IPHtrans_grid[inH  ][iT  ][iobs]
-               +     anH *(1.-aT)*IPHtrans_grid[inH+1][iT  ][iobs]
-               + (1.-anH)*    aT *IPHtrans_grid[inH  ][iT+1][iobs]
-               +     anH *    aT *IPHtrans_grid[inH+1][iT+1][iobs];
-    iIcalc += IPHb*iIPHtrans;
-   
-    return iIcalc;
+      iIPHtrans =  (1.-anH)*(1.-aT)*IPHtrans_grid[inH  ][iT  ][iobs]
+                 +     anH *(1.-aT)*IPHtrans_grid[inH+1][iT  ][iobs]
+                 + (1.-anH)*    aT *IPHtrans_grid[inH  ][iT+1][iobs]
+                 +     anH *    aT *IPHtrans_grid[inH+1][iT+1][iobs];
+      iIcalc += IPHb*iIPHtrans;
+      
+      return iIcalc;
+    }
   }
 
   void interp_I(double nHp, double Tp, 

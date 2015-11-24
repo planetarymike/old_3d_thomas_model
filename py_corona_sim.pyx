@@ -34,6 +34,7 @@ cdef extern from "corona_simulator.h":
         VecDoub current_I_calc
         VecDoub I_obs
         VecDoub DI_obs
+        VecDoub IPHb_model
         
 cdef class Pycoronasim:
     cdef corona_simulator *thisptr #holds the reference to the cpp class
@@ -50,4 +51,6 @@ cdef class Pycoronasim:
         return tonumpyarray(self.thisptr.I_obs.v,self.thisptr.nobs)
     def getdI_obs(self):
         return tonumpyarray(self.thisptr.DI_obs.v,self.thisptr.nobs)
+    def getIPHb_model(self):	
+        return tonumpyarray(self.thisptr.IPHb_model.v,self.thisptr.nobs)
 

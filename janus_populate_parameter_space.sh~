@@ -1,9 +1,0 @@
-#!/bin/bash
-
-#SBATCH --job-name chaffin-populate-parameter-space
-#SBATCH --time 05:00
-#SBATCH --nodes 64
-#SBATCH --ntasks 1024
-#SBATCH --output test-job.out
-
-
