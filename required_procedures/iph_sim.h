@@ -140,7 +140,8 @@ struct LOSprofinterp {
 	  /* Now the taus */
 	  for (ia = 0; ia < na[ilc][ilbfrac][it0]; ia++) {
 	    infile >> profvec[ilc][ilbfrac][it0][ia][1];
-	    profvec[ilc][ilbfrac][it0][ia][1]*=lc[ilc]*lc[ilc]/lbfrac[ilbfrac]*exp(-lc[ilc]);
+	    //profvec[ilc][ilbfrac][it0][ia][1]*=lc[ilc]*lc[ilc]/lbfrac[ilbfrac]*exp(-lc[ilc]);
+	    //from an old, obsolete version of the code.
 	    /* std::cout << "a = " << profvec[ilc][ilbfrac][it0][ia][0] << std::endl; */
 	    /* std::cout << "tau = " << profvec[ilc][ilbfrac][it0][ia][1] << std::endl; */
 	    /* std::cin.get(); */
