@@ -12,6 +12,10 @@ python_corona_sim:
 	$(FORT) -fPIC -g -c -O3 ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
 	python setup.py build_ext --inplace
 
+python_corona_multi_sim:
+	$(FORT) -fPIC -g -c -O3 ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
+	python setup_multi.py build_ext --inplace
+
 simulate_coronal_scan:
 	$(FORT) -O3 -c ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
 	$(CC) -c simulate_coronal_scan.cpp $(IDIR) $(LIBS) $(MPIFLAGS) $(SRCFNSLOCFLG) -O3 -o simulate_coronal_scan.o
@@ -35,3 +39,7 @@ master_fit_debug:
 	$(CC) -g -c master_fit.cpp $(IDIR) $(LIBS) $(MPIFLAGS) $(SRCFNSLOCFLG) -O0 -o master_fit.o
 	$(CC) -g master_fit.o ./required_procedures/ipbackgroundCFR_fun.o -lgfortran $(IDIR) $(LIBS) $(MPIFLAGS) $(SRCFNSLOCFLG) -O0 -o master_fit.x
 
+multi_corona_test:
+	$(FORT) -g -O0 -c ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
+	$(CC) -g -c test_multi_corona.cpp $(IDIR) $(LIBS) $(MPIFLAGS) $(SRCFNSLOCFLG) -O0 -o test_multi_corona.o
+	$(CC) -g test_multi_corona.o ./required_procedures/ipbackgroundCFR_fun.o -lgfortran $(IDIR) $(LIBS) $(MPIFLAGS) $(SRCFNSLOCFLG) -O0 -o test_multi_corona.x

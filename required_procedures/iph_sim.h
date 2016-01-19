@@ -235,6 +235,7 @@ struct LOSprofinterp {
 	}
       }
     }
+    return *this;
   }
 
 
@@ -267,7 +268,10 @@ struct LOSprofinterp {
        including all factors except exobase density. Return vectors
        avec and tauvec have variable length depending on when the
        optical depth drops below threshold. */
-    
+
+    if (!init)
+      throw("LOS prof interp not initialized!");
+
     double tlbfrac = tlb/tlc;
 
     int itlc = lc_terp.index(tlc);
@@ -393,10 +397,12 @@ struct LOSprofinterp {
   double iph_absorbed_radec(double iphra, double iphdec, double scvel,
 			    double nexo, double Texo,
 			    double lb, double t0) {
-    /* Given an iph velocity offset and sigma in units of alpha, where
-       alpha is the thermal velocity of H atoms at the Mars exobase,
-       compute the fraction of the IPH absorbed by the mars
-       atmosphere. */
+    /* Calculate the extinction of the IPH by the Mars corona, using a
+       model to compute the width and doppler shift of the IPH line,
+       and the specified spacecraft velocity to obtain the relative
+       shape of the IPH line relative to that of the Mars corona. Then
+       extinct by the correct amount along the line of sight
+       specified by the impace parameter lambda and initial angle. */
 
     // std::cout << " ra = " << iphra << std::endl;
     // std::cout << " dec = " << iphdec << std::endl;
@@ -448,6 +454,39 @@ struct LOSprofinterp {
       
       return absfrac;
     }
+  }
+
+  double iph_absorbed_radec_scvec(double iphra, double iphdec, double scvel,
+				  double nexo, double Texo,
+				  double* pos, double* dir) {
+    /* Calculate the extinction of the IPH by the Mars corona,
+       using the cartesian position and look direction of the
+       spacecraft. */
+    double lb;
+    double t0;
+    double s = 0;
+    double mrh;
+    double scr=0.0;
+    double tr=0.0, td=0.0;
+    for (int j=0;j<3;j++) {
+      tr=pos[j];
+      td=dir[j];
+      s += -tr*td;
+      scr+=tr*tr;
+      // std::cout << "tr = " << tr << std::endl;
+    }
+    scr=sqrt(scr);
+    mrh=0.0;
+    for (int j=0;j<3;j++) {
+      tr=pos[j]+s*dir[j];
+      mrh+=tr*tr;
+    }
+    mrh=sqrt(mrh);
+    
+    lb=G*mMars*mH/(kB*Texo*mrh);
+    t0=asin(-s/scr);
+
+    return iph_absorbed_radec(iphra, iphdec, scvel, nexo, Texo, lb, t0);
   }
 
 };

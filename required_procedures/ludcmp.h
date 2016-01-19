@@ -23,7 +23,7 @@ struct LUdcmp
   MatDoub_I &aref; // used only by mprove
 };
 
-LUdcmp::LUdcmp(MatDoub_I &a) : n(a.nrows()), lu(a), aref(a), indx(n) {
+LUdcmp::LUdcmp(MatDoub_I &a) : n(a.nrows()), lu(a), indx(n), aref(a) {
   // Given a matrix a[0..n-1][0..n-1], this routine replaces it by the
   // LU decomposition of a rowwise permitation of itself. a is
   // input. On output, it is arranged as in NR Eqn 2.3.14;

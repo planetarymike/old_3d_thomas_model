@@ -113,7 +113,7 @@ double f2(const double &r,const double &Texo)
 // second integration function
 {
   const double Tt = Temp(r,Texo);
-  const double Ttprime = Tprime(r, Tt, Texo);
+  //  const double Ttprime = Tprime(r, Tt, Texo);
   const double dCO2 = nCO2(r,Texo);
   
   return rexo*rexo/(r*r*(DH(r, Tt, dCO2) + KK(dCO2,Texo)));

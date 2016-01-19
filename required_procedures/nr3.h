@@ -528,7 +528,7 @@ typedef NRvector<Doub> VecDoub, VecDoub_O, VecDoub_IO;
 typedef const NRvector<Doub*> VecDoubp_I;
 typedef NRvector<Doub*> VecDoubp, VecDoubp_O, VecDoubp_IO;
 
-/* typedef const NRvector<Complex> VecComplex_I;
+/* typedef const NRvector<Complex> VecComplex_I; */
 /* typedef NRvector<Complex> VecComplex, VecComplex_O, VecComplex_IO; */
 
 typedef const NRvector<Bool> VecBool_I;

@@ -60,6 +60,7 @@ public:
 	  mat[i1][i2][i3] = M.mat[i1][i2][i3];
       }
     }
+    return *this;
   }
   
   ~doub3d() {
@@ -92,12 +93,12 @@ struct Sobj {
 // function.
 
   string fname;
+  double nH, T; //exobase H density and temperature for this S
   VecDoub rpts,tpts,ppts;
   int nrpts, ntpts, nppts;
   doub3d Smat;
   Linear_interp rterp, tterp, pterp;//objects for BOUNDARY points
   int ir, it, ip;
-  double nH, T; //exobase H density and temperature for this S
   bool init;
 
   //default constructor
@@ -198,12 +199,12 @@ struct Sobj {
     if (!init)
       throw("Sobj not initialized!");
     //    make sure we're not off-grid
-    // std::cout << "rterp.xx[0] = " << rterp.xx[0] << std::endl;
-    // std::cout << "rterp.xx[nrpts-1] = " << rterp.xx[nrpts-1] << std::endl;
-    // std::cout << "tterp.xx[0] = " << tterp.xx[0] << std::endl;
-    // std::cout << "tterp.xx[ntpts-1] = " << tterp.xx[ntpts-1] << std::endl;
-    // std::cout << "pterp.xx[0] = " << pterp.xx[0] << std::endl;
-    // std::cout << "pterp.xx[nppts-1] = " << pterp.xx[nppts-1] << std::endl;
+    /* std::cout << "rterp.xx[0] = " << rterp.xx[0] << std::endl; */
+    /* std::cout << "rterp.xx[nrpts-1] = " << rterp.xx[nrpts-1] << std::endl; */
+    /* std::cout << "tterp.xx[0] = " << tterp.xx[0] << std::endl; */
+    /* std::cout << "tterp.xx[ntpts-1] = " << tterp.xx[ntpts-1] << std::endl; */
+    /* std::cout << "pterp.xx[0] = " << pterp.xx[0] << std::endl; */
+    /* std::cout << "pterp.xx[nppts-1] = " << pterp.xx[nppts-1] << std::endl; */
     bool inrgrid = ((rterp.xx[0] >= rpt && rpt >= rterp.xx[nrpts-1])||
 		    (rterp.xx[nrpts-1] >= rpt && rpt >= rterp.xx[0]));
     bool intgrid = ((tterp.xx[0] >= tpt && tpt >= tterp.xx[ntpts-1])||
@@ -221,10 +222,10 @@ struct Sobj {
     }
 
     //find the grid square:
+    // std::cout << "rpt = " << rpt << " , tpt = " << tpt << ", ppt = "<< ppt <<".\n";
     ir = rterp.index(rpt);
     it = tterp.index(tpt);
     ip = pterp.index(ppt);
-    // std::cout << "rpt = " << rpt << " , tpt = " << tpt << ", ppt = "<< ppt <<".\n";
     // std::cout << "ir = " << ir << " , it = " << it << ", ip = "<< ip <<".\n";
 
     /* We want to interpolate the finite element S grid. The above
@@ -234,9 +235,9 @@ struct Sobj {
     int ira, ita, ipa;
     tr=(rterp.xx[ir]+rterp.xx[ir+1])/2;
     if (rterp.xx[nrpts-1] > rterp.xx[0]) {
-      ira = (rpt > tr) ? ira=ir+1 : ira=ir-1;
+      ira = (rpt > tr) ? ir+1 : ir-1;
     } else {
-      ira = (rpt > tr) ? ira=ir-1 : ira=ir+1;
+      ira = (rpt > tr) ? ir-1 : ir+1;
     }
     if (ira==-1) ira=0;
     if (ira==nrpts-1) ira=nrpts-2;
@@ -246,7 +247,7 @@ struct Sobj {
     // std::cout << "tr = " << tr << ", tra = " << tra << std::endl;
     
     tt=(tterp.xx[it]+tterp.xx[it+1])/2;
-    ita = (tpt > tt) ? ita=it+1 : ita=it-1;
+    ita = (tpt > tt) ? it+1 : it-1;
     if (ita==-1) {
       ita=0;
       tta=0;//endpoint is azimuthal average at t=0
@@ -261,15 +262,23 @@ struct Sobj {
     // std::cout << "tt = " << tt << ", tta = " << tta << std::endl;
     
     tp=(pterp.xx[ip]+pterp.xx[ip+1])/2;
-    ipa = (ppt > tp) ? ipa=ip+1 : ipa=ip-1;
-    if (ipa=-1) {//loop to phi<0
+    ipa = (ppt > tp) ? ip+1 : ip-1;
+    if (ipa==-1) {//loop to phi<0
       ipa=nppts-2;
-      tpa=(pterp.xx[ipa]+pterp.xx[ipa+1])/2-2*pi;//-2pi for coef calculation 
-                                                 //(b/c pterp.xx e[0,2pi])
-    } else if (ipa=nppts-1) {//loop to phi>2pi
+      tpa=(pterp.xx[ipa]+pterp.xx[ipa+1])/2-2*pi;//-2pi for coef
+                                                 //calculation (b/c
+                                                 //pterp.xx
+                                                 //e[0,2pi]).
+      // For example in the azimuthally symmetric case with nppts=2,
+      // tp=pi, tpa=-pi, so that the phi area contribution is 2pi,
+      // covering all azimuths.
+    } else if (ipa==nppts-1) {//loop to phi>2pi
       ipa=0;
       tpa=(pterp.xx[ipa]+pterp.xx[ipa+1])/2+2*pi;//+2pi for coef calculation
                                                  //(b/c pterp.xx e[0,2pi])
+      // For example in the azimuthally symmetric case with nppts=2,
+      // tp=pi, tpa=3pi, so that the phi area contribution is 2pi,
+      // covering all azimuths.
     } else {
       tpa=(pterp.xx[ipa]+pterp.xx[ipa+1])/2;
     }
@@ -340,7 +349,7 @@ struct Sobj {
 
 
     // std::cout << "Sterp = " << Sterp;
-    // std::cin.get();
+    /* std::cin.get(); */
 
     return Sterp;
   }

@@ -129,8 +129,8 @@ void generate_S(const double nexo,
   double tauH, tauCO2; // optical depth
   double domega; // differential solid angle
   double omega; // check parameter to make sure sum(domega) = 4*pi
-  double coef,tcoef; // influence coeffecient computed between atmospheric
-                     // point and auxiliary grid points
+  double coef; // influence coeffecient computed between atmospheric
+               // point and auxiliary grid points
   double nH1,nH2,nCO21,nCO22;//temporary densities for trapezoidal line integration
   double sH01,sH02;          //temporary line-center cross-sections
   // variables for single scattering function
@@ -138,7 +138,7 @@ void generate_S(const double nexo,
   double tauHcol, tauCO2col;
 
   //lots of loop and index variables
-  int row,col,irw,itw,ipw,irs,its,ips;//loop variables
+  int row,col,irw,itw,ipw,its,ips;//loop variables
   double dr, dt, dp;//size of the current grid box
   int iter; // number of iterations (steps taken along outward ray)
   int ordx, otdx, opdx, rdx, tdx, pdx; // volume indices
