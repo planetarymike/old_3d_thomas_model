@@ -2,9 +2,7 @@ IDIR=-I./required_procedures/
 CC=g++
 FORT=gfortran
 LIBS=-lgsl -lgslcblas -lm -lgfortran -fPIC
-ifndef LIBS
-	$(error The Gnu scientific library needs to be installed to run this code. Please install GSL.)
-endif
+#The Gnu scientific library needs to be installed to run this code. Please install GSL.
 
 SRCFNSLOCFLG=-D 'SRCFNSLOC="./source_functions/"'
 
@@ -22,9 +20,9 @@ simulate_coronal_scan:
 	$(CC) simulate_coronal_scan.o ./required_procedures/ipbackgroundCFR_fun.o -lgfortran $(IDIR) $(LIBS) $(MPIFLAGS) $(SRCFNSLOCFLG) -O3 -o simulate_coronal_scan.x
 
 simulate_coronal_scan_debug:
-	$(FORT) -fPIC -g -c -O0 ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
-	$(CC) -g -c simulate_coronal_scan.cpp $(IDIR) $(LIBS) $(MPIFLAGS) $(SRCFNSLOCFLG) -O0 -o simulate_coronal_scan.o
-	$(CC) -g simulate_coronal_scan.o ./required_procedures/ipbackgroundCFR_fun.o -lgfortran $(IDIR) $(LIBS) $(SRCFNSLOCFLG) -O0 -o simulate_coronal_scan.x
+	$(FORT) -fPIC -pg -c -O0 ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
+	$(CC) -pg -c simulate_coronal_scan.cpp $(IDIR) $(LIBS) $(MPIFLAGS) $(SRCFNSLOCFLG) -O0 -o simulate_coronal_scan.o
+	$(CC) -pg simulate_coronal_scan.o ./required_procedures/ipbackgroundCFR_fun.o -lgfortran $(IDIR) $(LIBS) $(SRCFNSLOCFLG) -O0 -o simulate_coronal_scan.x
 
 master_fit_all_cpp:
 	$(CC) master_fit.cpp -lf2c -u MAIN__ $(IDIR) $(LIBS) $(SRCFNSLOCFLG) -O3 -o master_fit.x
