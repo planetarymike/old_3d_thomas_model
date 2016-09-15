@@ -32,7 +32,9 @@ cdef extern from "multi_corona_simulator.h":
         VecDoub current_I_calc
         VecDoub I_obs
         VecDoub DI_obs
-        VecDoub IPHb_model        
+        VecDoub IPHb_model
+        VecDoub alttan
+        VecDoub SZAtan    
     cdef cppclass corona_simulator:
         corona_simulator(bool,bool) except +
         int nobsdata
@@ -54,6 +56,10 @@ cdef class Pycorona_multi_sim:
         return tonumpyarray(self.thisptr.allobsdata[idata].current_I_calc.v,self.thisptr.allobsdata[idata].nobs)
     def getI_obs(self, int idata):
         return tonumpyarray(self.thisptr.allobsdata[idata].I_obs.v,self.thisptr.allobsdata[idata].nobs)
+    def getalttan(self, int idata):
+        return tonumpyarray(self.thisptr.allobsdata[idata].alttan.v,self.thisptr.allobsdata[idata].nobs)
+    def getSZAtan(self, int idata):
+        return tonumpyarray(self.thisptr.allobsdata[idata].SZAtan.v,self.thisptr.allobsdata[idata].nobs)
     def getdI_obs(self,int idata):
         return tonumpyarray(self.thisptr.allobsdata[idata].DI_obs.v,self.thisptr.allobsdata[idata].nobs)
     def getIPHb_model(self,int idata):	
