@@ -1,4 +1,3 @@
-#include <mpi.h> // parallelization//must be included in top line of main file
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -13,7 +12,7 @@ int main() {
   int ntaus=(tautop-taustep)/taustep+1;
 
   ofstream HolTfile;
-  HolTfile.open("../Model_Source_Functions/HolTinterp.dat");
+  HolTfile.open("../../tabulated_data/HolTinterp.dat");
   int w = 15;
   HolTfile.width(w);
   HolTfile << ntaus << std::endl;
