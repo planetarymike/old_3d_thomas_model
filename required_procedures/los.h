@@ -448,11 +448,12 @@ struct LOS_integrator
 
     //if we're outside the atmosphere to begin, advance to the edge with
     //no penalty:
-    while (rrpt > rmax) {
+    double rmaxpad=0.99*rmax;
+    while (rrpt > rmaxpad) {
       std::cout << "Moving to start of atmosphere:\n";
       std::cout << "Before moving: rrpt = " << rrpt << " > rmax = " << rmax <<std::endl; 
       s = xpt*line_x + ypt*line_y + zpt*line_z;
-      s = -s - sqrt(s*s + rmax*rmax - rrpt*rrpt);// I know it looks negative
+      s = -s - sqrt(s*s + 0.99*rmaxpad*rmaxpad - rrpt*rrpt);// I know it looks negative
       // but actually s=r0.line is negative (basic quad. eq.), because
       // we are outside the atmosphere looking in.
       std::cout << "Moving forward by s = " << s << " cm." << std::endl;
@@ -465,7 +466,7 @@ struct LOS_integrator
       ppt = std::atan2(ypt, zpt);
       ppt = ppt < 0 ? ppt+2*pi : ppt;// put phi in the right domain
       std::cout << "Now rrpt = " << rrpt << ", tpt = " << tpt*180/pi << " degrees.\n";
-      std::cin.get();
+      /* std::cin.get(); */
     }
 
     // now proceed with integration  
