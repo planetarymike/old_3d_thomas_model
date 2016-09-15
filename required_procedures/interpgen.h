@@ -30,6 +30,10 @@ struct atmointerp {
   Linear_interp lognHinterp;
   Linear_interp lognCO2interp;
   bool init;
+  double co2coefs[6];
+  double hcoefs1[6];
+  double hcoefs2[6];
+  double km, logkm, tkm, ret;
 
   //default constructor
   atmointerp() {init=0;}
@@ -42,6 +46,25 @@ struct atmointerp {
 				   npts(nptss), 
 				   fname(fnamee) 
   {
+    co2coefs[0]=-1733.67;
+    co2coefs[1]=1845.05;
+    co2coefs[2]=-738.211;
+    co2coefs[3]=142.973;
+    co2coefs[4]=-13.4971;
+    co2coefs[5]=0.496014;
+    hcoefs1[0]=-113383.;
+    hcoefs1[1]=110767.;
+    hcoefs1[2]=-43170.6;
+    hcoefs1[3]=8394.19;
+    hcoefs1[4]=-814.51;
+    hcoefs1[5]=31.5595;
+    hcoefs2[0]=70.6367;
+    hcoefs2[1]=-39.3017;
+    hcoefs2[2]=10.1217;
+    hcoefs2[3]=-1.24821;
+    hcoefs2[4]=0.0724967;
+    hcoefs2[5]=-0.00161804;
+    
     if (fname.size() == 0) {
       char filename[100];
       sprintf(filename,"atm_nH%G_T%G_npts=%d.dat",nexo,Texo,npts);
@@ -105,17 +128,50 @@ struct atmointerp {
   double nH(const double &r) {
     if (!init)
       throw("atmointerp not initialized!");
-    double km = (r - rMars)/1e5;
+    km = (r - rMars)/1e5;
     return exp(lognHinterp.interp(log(km)));
+    /* if (km < 120.) { */
+    /*   return 1.98713e6; */
+    /* } else if (km < 200.) { */
+    /*   logkm=log(km); */
+    /*   tkm=1.0; */
+    /*   ret=0.0; */
+    /*   for (int i=0;i<6;i++) { */
+    /* 	ret+=tkm*hcoefs1[i]; */
+    /* 	tkm*=logkm; */
+    /*   } */
+    /*   return exp(ret); */
+    /* } else { */
+    /*   double logkm=log(km); */
+    /*   double tkm=1.0; */
+    /*   double ret=0.0; */
+    /*   for (int i=0;i<6;i++) { */
+    /* 	ret+=tkm*hcoefs2[i]; */
+    /* 	tkm*=logkm; */
+    /*   } */
+    /*   return exp(ret); */
+    /* } */
   }
   double nCO2(const double &r) {
     if (!init)
       throw("atmointerp not initialized!");
-    double km = (r - rMars)/1e5;
+    km = (r - rMars)/1e5;
     /* if (km > 300) { */
     /*   return 0; */
     /* } else { */
-      return exp(lognCO2interp.interp(log(km)));
+    return exp(lognCO2interp.interp(log(km)));
+    /* } */
+    /* if (km > 1000) { */
+    /*   return 0; */
+    /* } else { */
+    /*   logkm=log(km); */
+    /*   tkm=1.0; */
+    /*   ret=0.0; */
+    /*   for (int i=0;i<6;i++) { */
+    /* 	ret+=tkm*co2coefs[i]; */
+    /* 	tkm*=logkm; */
+    /*   } */
+    /*   return exp(ret); */
     /* } */
   }
   double nH(const double &r, const double &t) {
