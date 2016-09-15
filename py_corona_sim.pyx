@@ -1,4 +1,4 @@
-    # py_corona_sim.pyx -- Cython wrapper for H corona simulation object
+# py_corona_sim.pyx -- Cython wrapper for H corona simulation object
 # distutils: language = c++
 
 from libcpp cimport bool
