@@ -6,13 +6,13 @@ LIBS=-lgsl -lgslcblas -lm -lgfortran -fPIC
 
 SRCFNSLOCFLG=-D 'SRCFNSLOC="./source_functions/"'
 
-python_corona_sim:
-	$(FORT) -fPIC -g -c -O3 ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
-	python setup.py build_ext --inplace
-
 python_corona_multi_sim:
 	$(FORT) -fPIC -g -c -O3 ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
 	python setup_multi.py build_ext --inplace
+
+python_corona_sim:
+	$(FORT) -fPIC -g -c -O3 ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
+	python setup.py build_ext --inplace
 
 simulate_coronal_scan:
 	$(FORT) -O3 -c ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
