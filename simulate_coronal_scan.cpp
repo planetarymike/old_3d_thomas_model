@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include "nr3.h"
-#include "corona_simulator.h" //simulation routines for synthetic atmospheres
+#include "multi_corona_simulator.h" //simulation routines for synthetic atmospheres
 
 
 //compile: 
@@ -12,6 +12,9 @@
 //mpicxx simulate_coronal_scan.cpp `pkg-config --cflags --libs gsl` -Irequired_procedures/ -Wl,-rpath,/usr/lib64/openmpi/lib/ -o simulate_coronal_scan.x
 // add -pg for profiling.
 // add -g for line numbers
+
+//call
+//./simulate_coronal_scan.x -b 0 -T 300 -n 100000 ./mvn_iuv_l1b_outbound-orbit00422-fuv_20141217T160952_v01_r01_obs.dat
 
 
 int main(int argc, char* argv[]) {
@@ -107,11 +110,11 @@ int main(int argc, char* argv[]) {
     cal=1.0;
   }
 
-  corona_simulator sim(forcesim);
+  corona_simulator sim(forcesim,simulate_IPH);
   if (nointerp) {
     //direct simulation for these conditions
     std::cout << "Direct simulation proceeding.\n";
-    sim.obs_import(obsname,simulate_IPH);//load the observation
+    sim.load_obs(obsname);//load the observation
     sim.get_S(nexo,Texo);//load or simulate the source function
     std::cout << "current_Sinit = " << sim.current_Sinit << std::endl;
     sim.calc_I(IPHb);//calculate with background
@@ -119,22 +122,22 @@ int main(int argc, char* argv[]) {
     //print out the results:
     std::cout << "\nHere's the result of the calculation:\n"
 	      << "\nI_calc = [ ";
-    for (int i = 0; i < sim.nobs; i++)
-      std::cout << cal*sim.current_I_calc[i] << ", ";
+    for (int i = 0; i < sim.allobsdata[0].nobs; i++)
+      std::cout << cal*sim.allobsdata[0].current_I_calc[i] << ", ";
     std::cout << "\b\b ]\n";
     std::cout << "\n\nYou have reached the end of the program!\nGoodbye.\n\n";
   } else {
     //interpolated simulation
     std::cout << "Proceeding with interpolated computation.\n";
-    sim.obs_import(obsname,simulate_IPH);//load the observation
+    sim.load_obs(obsname);//load the observation
     VecDoub I_calc;
-    sim.interp_I(nexo, Texo, I_calc, IPHb);//calculate with background
+    sim.interp_I(0, nexo, Texo, IPHb);//calculate with background
   
     //print out the results:
     std::cout << "\nHere's the result of the calculation:\n"
 	      << "\nI_calc = [ ";
-    for (int i = 0; i < sim.nobs; i++)
-      std::cout << cal*I_calc[i] << ", ";
+    for (int i = 0; i < sim.allobsdata[0].nobs; i++)
+      std::cout << cal*sim.allobsdata[0].current_I_calc[i] << ", ";
     std::cout << "\b\b ]\n";
     std::cout << "\n\nYou have reached the end of the program!\nGoodbye.\n\n";
   }

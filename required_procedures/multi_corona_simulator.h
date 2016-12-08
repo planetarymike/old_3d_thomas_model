@@ -10,12 +10,14 @@
 #include "physical.h" // physical definitions, nH, nCO2, KK, etc.
 #include "quadrature.h" // to compute line integrals
 #include "definitions.h" // basic parameter definitions
+#include "interp_1d.h"
 #include "nr3.h" // type VecDoub
 #include "los.h"       //line of sight integration routines
 #include "rad_trans.h" // two-point column density, holstein t and g functions
 #include "iph_sim.h" 
 #include "generate_S.h"
 #include "iph_model_interface.h"
+#include "bicubic.h"
 
 struct corona_observation {
 
@@ -422,7 +424,7 @@ struct corona_simulator {
     /* tries to load S from file; if file not found, calculates and
        produces file for future use */
 
-    if (!forcesim) { 
+    if (!forcesim) {
 	//what would the filename look like?
 	string Sfname=Sfilename(nH,T);
 	ifstream Sfile(Sfname.c_str());
@@ -580,7 +582,7 @@ struct corona_simulator {
   }
   
   //check that intensities exist for interpolation, fill them in if they don't
-  void grid_init(int inH, int iT)
+  void grid_init_bilinear(int inH, int iT)
   {
     for (int iinH=inH;iinH<=inH+1;iinH++) {
       for (int iiT=iT;iiT<=iT+1;iiT++) {
@@ -614,7 +616,7 @@ struct corona_simulator {
   }
 
   
-  double interp_iobs(corona_observation & obsdata, int iobs, double nHp, double Tp, double IPHb=0.0) {
+  double interp_iobs_bilinear(corona_observation & obsdata, int iobs, double nHp, double Tp, double IPHb=0.0) {
     if (nHp<nHi||nHp>nHf||Tp<Ti||Tp>Tf) {
       std::cout << "nH or T outside of parameter grid!\n"
 		<< " nH = " << nHp << std::endl
@@ -638,7 +640,7 @@ struct corona_simulator {
       // std::cout << "iT = " << iT << std::endl;
       // std::cin.get();
       
-      grid_init(inH,iT);//simulate or load intensities
+      grid_init_bilinear(inH,iT);//simulate or load intensities
       
       //interpolate:
       anH = (nHp-(nH_terp).xx[inH])/((nH_terp).xx[inH+1]-(nH_terp).xx[inH]);
@@ -667,13 +669,94 @@ struct corona_simulator {
     }
   }
 
+  //check that intensities exist for interpolation, fill them in if they don't
+  void grid_init_bicubic(int inH, int iT)
+  {
+    int mininH, maxinH, miniT, maxiT;
+    inH < 1 ? mininH=0 : mininH=inH-1;
+    inH > nnH-3 ? maxinH=nnH : maxinH=inH+2; 
+    iT < 1 ? miniT=0 : miniT=iT-1;
+    iT > nT-3 ? maxiT=nT : maxiT=iT+2; 
+
+    for (int iinH=mininH;iinH<=maxinH;iinH++) {
+      for (int iiT=miniT;iiT<=maxiT;iiT++) {
+	if (!Sinit_grid[iinH][iiT]) {
+	  //load or simulate the source function
+	  get_S(nH_vec[iinH],
+		T_vec[iiT],
+		S_grid[iinH][iiT],
+		atmointerp_grid[iinH][iiT],
+		Sinit_grid[iinH][iiT]);
+	}
+	for (int idata=0;idata<nobsdata;idata++) {
+	  if (!allobsdata[idata].I_calc_init_grid[iinH][iiT]) {
+	    //calculate the intensities
+	    calc_I(allobsdata[idata],
+		   S_grid[iinH][iiT],
+		   atmointerp_grid[iinH][iiT],
+		   Sinit_grid[iinH][iiT],
+		   allobsdata[idata].I_calc_grid[iinH][iiT],
+		   0.0);//IPHb=0 here because it is added in later by interp_iobs
+	    //calculate the IPH reduction factor
+	    calc_IPHb_transmission(allobsdata[idata],
+				   nH_vec[iinH],
+				   T_vec[iiT],
+				   allobsdata[idata].IPHtrans_grid[iinH][iiT]);
+	    allobsdata[idata].I_calc_init_grid[iinH][iiT]=TRUE;
+	  }
+	}
+      }
+    }
+  }
+
+  double interp_iobs_bicubic(corona_observation & obsdata, int iobs, double nHp, double Tp, double IPHb=0.0) {
+    if (nHp<nHi||nHp>nHf||Tp<Ti||Tp>Tf) {
+      std::cout << "nH or T outside of parameter grid!\n"
+		<< " nH = " << nHp << std::endl
+		<< "  T = " <<  Tp << std::endl;
+      return -1;
+    } else {
+      double iIcalc, iIPHtrans;
+      // find the grid square:
+      // std::cout << "nH = " << nHp << std::endl;
+      int inH = (nH_terp).cor ? (nH_terp).hunt(nHp) : (nH_terp).locate(nHp);
+      // std::cout << "inH = " << inH << std::endl;
+      // std::cout << "nH[" << inH << "] = " << nH_terp.xx[inH] << std::endl;
+      // std::cout << "nH[" << inH + 1 << "] = " << nH_terp.xx[inH + 1] << std::endl;
+      // std::cout << "T = " << Tp << std::endl;
+      int iT = (T_terp).cor ? (T_terp).hunt(Tp) : (T_terp).locate(Tp);
+      // std::cout << "iT = " << iT << std::endl;
+      // std::cout << "T[" << iT << "] = " << T_terp.xx[iT] << std::endl;
+      // std::cout << "T[" << iT + 1 << "] = " << T_terp.xx[iT + 1] << std::endl;
+      
+      // std::cout << "inH = " << inH << std::endl;
+      // std::cout << "iT = " << iT << std::endl;
+      // std::cin.get();
+      
+      grid_init_bicubic(inH,iT);//simulate or load intensities
+      
+      iIcalc = bicubic_iobs(nHp,Tp,nH_terp,T_terp,obsdata.I_calc_grid,iobs);
+
+      //now add in the IPH for points with tangent altitudes above 200km
+      //if iph is simulated using the Quemerais code, it is multiplied
+      //in here. Otherwise, this factor was set to 1 in the initial load
+      //of the obs_data and IPHb represents the brightness of the IPH
+      //and not a multiplicative scaling factor.
+      iIPHtrans = bicubic_iobs(nHp,Tp,nH_terp,T_terp,obsdata.IPHtrans_grid,iobs);
+      iIcalc += IPHb*iIPHtrans;
+      
+      return iIcalc;
+    }
+  }
+
+
   void interp_I(corona_observation obsdata,
 		double nHp, double Tp, 
 		double IPHb=0.0) {
 
     obsdata.current_I_calc.resize(obsdata.nobs);
     for (int iobs=0; iobs<obsdata.nobs; iobs++)
-      obsdata.current_I_calc[iobs]=interp_iobs(obsdata, iobs, nHp, Tp, IPHb);
+      obsdata.current_I_calc[iobs]=interp_iobs_bicubic(obsdata, iobs, nHp, Tp, IPHb);
   }
   void interp_I(int idata,
 		double nHp, double Tp, 
@@ -682,7 +765,7 @@ struct corona_simulator {
     int tnobs=allobsdata[idata].nobs;
     allobsdata[idata].current_I_calc.resize(tnobs);
     for (int iobs=0; iobs<tnobs; iobs++)
-      allobsdata[idata].current_I_calc[iobs]=interp_iobs(allobsdata[idata], iobs, nHp, Tp, IPHb);
+      allobsdata[idata].current_I_calc[iobs]=interp_iobs_bicubic(allobsdata[idata], iobs, nHp, Tp, IPHb);
   }
   void interp_I(double nHp, double Tp, 
 		double IPHb=0.0) {

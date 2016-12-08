@@ -224,7 +224,8 @@ double nH(const double &r, const double &nHexo, const double &Texo)
 
 
 struct tabular_atmo {
-  //structure to perform 
+  //structure to perform tabulation and integration of H and CO2
+  //density in the Martian atmosphere.
   double nexo, Texo;
   int n_interp_pts;
   int n_quad_pts;

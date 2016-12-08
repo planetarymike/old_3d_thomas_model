@@ -65,7 +65,7 @@ const int nrpts = 160;//includes boundaries at rmin and rmax
                       //strongest dependence of computed intensities is here
 
 //select the method for distributing the theta points in
-//angle. Options are: uniform, doubleterm
+//angle. Options are: uniform, doubleterm (more points near the terminator)
 const string tmethod = "uniform";//"doubleterm";
 const int nthetapts = 17;//includes boundaries at 0 and 180
                          //if using method doubleterm, must be of the form
