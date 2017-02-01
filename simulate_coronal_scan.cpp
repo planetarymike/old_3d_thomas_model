@@ -120,13 +120,15 @@ int main(int argc, char* argv[]) {
         {
 	  nointerp=TRUE;
         }
+      else if (strcmp(argv[i], "-silent") == 0)
+	silent=TRUE;
       else
 	{
 	  //get the observation to perform analysis on from the function call:
 	  obsname=argv[i];
 	  if (!silent) 
 	    std::cout << "Observation under analysis is: " << obsname << std::endl;	  
-        }
+	}
     }
 
   if (userIPH) {
