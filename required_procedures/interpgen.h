@@ -23,6 +23,7 @@ using std::exp;
    files is good because it allows for line integrations to use
    exactly the same densities as the source function generation.*/
 struct atmointerp {
+  bool silent;
   double nexo, Texo;
   int npts;
   string fname;
@@ -41,10 +42,12 @@ struct atmointerp {
   atmointerp(double nexoo, 
 	     double Texoo,
 	     int nptss, 
-	     string fnamee = "") : nexo(nexoo), 
-				   Texo(Texoo), 
-				   npts(nptss), 
-				   fname(fnamee) 
+	     string fnamee = "",
+	     bool silentt = FALSE) : nexo(nexoo), 
+				     Texo(Texoo), 
+				     npts(nptss), 
+				     fname(fnamee),
+				     silent(silentt)
   {
     co2coefs[0]=-1733.67;
     co2coefs[1]=1845.05;
@@ -78,7 +81,8 @@ struct atmointerp {
     ifstream file;
     file.open(fname.c_str());
     if (file.good()) { // if the appropriate file exists, read from that
-      std::cout << "Reading atmospheric density values from " << fname << std::endl;
+      if (!silent)
+	std::cout << "Reading atmospheric density values from " << fname << std::endl;
 
       // clear the header
       char dumline[100];

@@ -21,6 +21,9 @@
 
 struct corona_observation {
 
+  //output squelching
+  bool silent;
+  
   //stuff to do with an individual observation
   string obsname;
   bool obsinit;
@@ -54,7 +57,8 @@ struct corona_observation {
     obsinit=0;
   }
   //named constructor
-  corona_observation(string obsnamee, bool simulate_iph=TRUE) {
+  corona_observation(string obsnamee, bool simulate_iph=TRUE, bool silentt=FALSE) :
+    silent(silentt) {
     obsinit=0;
     //set up the simulator grids and initialize 
     I_calc_grid = new VecDoub*[nnH];
@@ -72,6 +76,7 @@ struct corona_observation {
   }
   //copy constructor
   corona_observation(const corona_observation &obsdata) {
+    silent=obsdata.silent;
     obsname=obsdata.obsname;
     obsinit=obsdata.obsinit;
     nobs=obsdata.nobs;
@@ -118,6 +123,7 @@ struct corona_observation {
   
   //operator=
   corona_observation&operator=(const corona_observation &obsdata) {
+    silent=obsdata.silent;
     obsname=obsdata.obsname;
     obsinit=obsdata.obsinit;
     nobs=obsdata.nobs;
@@ -206,10 +212,11 @@ struct corona_observation {
       obsfile >> marspos[0]; //ecliptic coordinates of Mars at the time of the observation
       obsfile >> marspos[1]; //      these coordinates are used to determine the model 
       obsfile >> marspos[2]; //      IPH brightness that seeds the background subtraction.
-      std::cout << "mars_pos = [" 
-		<< marspos[0] << ", " 
-		<< marspos[1] << ", "
-		<< marspos[2] << "]"<< std::endl;
+      if (!silent) 
+	std::cout << "mars_pos = [" 
+		  << marspos[0] << ", " 
+		  << marspos[1] << ", "
+		  << marspos[2] << "]"<< std::endl;
       obsfile.getline(datetime,1024); // capture time of file (irrelevant for this code)
 
       //prepare vector parameters for read-in
@@ -295,6 +302,7 @@ struct corona_simulator {
 
   bool forcesim;
   bool simulate_iph;
+  bool silent;
 
   int nobsdata;
   corona_observation* allobsdata;
@@ -320,9 +328,11 @@ struct corona_simulator {
   
   //constructor
   corona_simulator(bool forcesimm=FALSE,
-		   bool simulate_IPHH=TRUE) : forcesim(forcesimm), 
-					      simulate_iph(simulate_IPHH),
-					      LOS(HolTfilename) {
+		   bool simulate_IPHH=TRUE,
+		   bool silentt=FALSE) : forcesim(forcesimm), 
+					 simulate_iph(simulate_IPHH),
+					 silent(silentt),
+					 LOS(HolTfilename,silent) {
     //nothing is initialized at first
     nobsdata = 0;
     current_Sinit = 0;
@@ -382,13 +392,13 @@ struct corona_simulator {
       nobsdata = nobsdataa;
       allobsdata = new corona_observation[nobsdata];
       for (int iobsdata=0;iobsdata<nobsdata;iobsdata++)
-	allobsdata[iobsdata]=corona_observation(filename[iobsdata], simulate_iph);
+	allobsdata[iobsdata]=corona_observation(filename[iobsdata], simulate_iph,silent);
     } else {
       delete [] allobsdata;
       nobsdata = nobsdataa;
       allobsdata = new corona_observation[nobsdata];
       for (int iobsdata=0;iobsdata<nobsdata;iobsdata++)
-	allobsdata[iobsdata]=corona_observation(filename[iobsdata], simulate_iph);
+	allobsdata[iobsdata]=corona_observation(filename[iobsdata], simulate_iph,silent);
     }
   }
   void load_obs(string filename) {
@@ -407,7 +417,7 @@ struct corona_simulator {
       for (int iobsdata=0;iobsdata<nobsdata;iobsdata++)
 	swapobsdata[iobsdata]=allobsdata[iobsdata];
       for (int iobsdata=0;iobsdata<n_new;iobsdata++) 
-	swapobsdata[iobsdata+nobsdata]=corona_observation(filename[iobsdata],simulate_iph);
+	swapobsdata[iobsdata+nobsdata]=corona_observation(filename[iobsdata],simulate_iph,silent);
       allobsdata=swapobsdata;
       nobsdata+=n_new;
       delete [] oldptr;
@@ -434,7 +444,7 @@ struct corona_simulator {
 	    Sfile.close();
 	    thisS=Sobj(Sfname);
 	    //if S file exists, atmointerp does too.
-	    thisatmointerp = atmointerp(thisS.nH,thisS.T,nphyspts);
+	    thisatmointerp = atmointerp(thisS.nH,thisS.T,nphyspts,"",silent);
 	    thisSinit=1;
 	  }
 	}

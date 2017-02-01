@@ -30,10 +30,20 @@ int main(int argc, char* argv[]) {
   bool usertemp=FALSE;
   double Texo=1.0;
   bool userdens=FALSE;
+  bool multidens=FALSE;
   double nexo=1.0;
+  double nexo_i=1.0;
+  double nexo_f=1.0;
+  double nexo_d=1.0;
   bool simulate_IPH=FALSE;
   bool forcesim=FALSE;
   bool nointerp=FALSE;
+  bool silent=FALSE;
+
+  //check to see if silent output is requested
+  for (int i = 1; i < argc; i++) 
+    if (strcmp(argv[i], "-silent") == 0)
+      silent=TRUE;
   
   for (int i = 1; i < argc; i++)  /* Skip argv[0] (program name). */
     {
@@ -52,24 +62,51 @@ int main(int argc, char* argv[]) {
 	  usercal=TRUE;
 	  i++;
 	  cal = atof(argv[i]);
-	  std::cout << "Fixing calibration factor at " << cal << " .\n";
-	  std::cout << std::endl;
+	  if (!silent) {
+	    std::cout << "Fixing calibration factor at " << cal << " .\n";
+	    std::cout << std::endl;
+	  }
         }
       else if (strcmp(argv[i], "-T") == 0)
         {
 	  usertemp=TRUE;
 	  i++;
 	  Texo = atof(argv[i]);
-	  std::cout << "Fixing temperature at " << Texo << " K.\n";
-	  std::cout << std::endl;
+	  if (!silent) {
+	    std::cout << "Fixing temperature at " << Texo << " K.\n";
+	    std::cout << std::endl;
+	  }
         }
       else if (strcmp(argv[i], "-n") == 0)
         {
 	  userdens=TRUE;
 	  i++;
-	  nexo = atof(argv[i]);
-	  std::cout << "Fixing density at " << nexo << " / cm3.\n";
-	  std::cout << std::endl;
+	  if (strcmp(argv[i],"[") == 0) {
+	    //the number density parameter is an array argument
+	    multidens=TRUE;
+	    i++;
+	    nexo_i=atof(argv[i]);
+	    i++;
+	    nexo_f=atof(argv[i]);
+	    i++;
+	    nexo_d=atof(argv[i]);
+	    i++;//clears the closing brace
+	    if (!silent) {
+	      std::cout << "Simulating multiple densities.\n"
+			<< "From " << nexo_i << "/cc to " << nexo_f << " /cc \n"
+			<< "in steps of " << nexo_d << "/cc .\n";
+	      std::cout << std::endl;
+	    }
+	  } else {
+	    nexo = atof(argv[i]);
+	    nexo_i=nexo;
+	    nexo_f=nexo;
+	    nexo_d=nexo;
+	    if (!silent) {
+	      std::cout << "Fixing density at " << nexo << " / cm3.\n";
+	      std::cout << std::endl;
+	    }
+	  }
         }
       else if (strcmp(argv[i], "-simIPH") == 0)
         {
@@ -87,17 +124,22 @@ int main(int argc, char* argv[]) {
 	{
 	  //get the observation to perform analysis on from the function call:
 	  obsname=argv[i];
-	  std::cout << "Observation under analysis is: " << obsname << std::endl;	  
+	  if (!silent) 
+	    std::cout << "Observation under analysis is: " << obsname << std::endl;	  
         }
     }
 
   if (userIPH) {
     if (simulate_IPH) {
-      std::cout << "Fixing background IPH multiplier at " << IPHb << " .\n";
-      std::cout << std::endl;
+      if (!silent) {
+	std::cout << "Fixing background IPH multiplier at " << IPHb << " .\n";
+	std::cout << std::endl;
+      }
     } else {
-      std::cout << "Fixing background IPH at " << IPHb << " kR.\n";
-      std::cout << std::endl;
+      if (!silent) {
+	std::cout << "Fixing background IPH at " << IPHb << " kR.\n";
+	std::cout << std::endl;
+      }
     }
   } else {
     if (simulate_IPH) {
@@ -110,39 +152,55 @@ int main(int argc, char* argv[]) {
     cal=1.0;
   }
 
-  corona_simulator sim(forcesim,simulate_IPH);
+  corona_simulator sim(forcesim,simulate_IPH,silent);
   if (nointerp) {
     //direct simulation for these conditions
-    std::cout << "Direct simulation proceeding.\n";
+    if (!silent)
+      std::cout << "Direct simulation proceeding.\n";
     sim.load_obs(obsname);//load the observation
-    sim.get_S(nexo,Texo);//load or simulate the source function
-    std::cout << "current_Sinit = " << sim.current_Sinit << std::endl;
-    sim.calc_I(IPHb);//calculate with background
-  
-    //print out the results:
-    std::cout << "\nHere's the result of the calculation:\n"
-	      << "\nI_calc = [ ";
-    for (int i = 0; i < sim.allobsdata[0].nobs; i++)
-      std::cout << cal*sim.allobsdata[0].current_I_calc[i] << ", ";
-    std::cout << "\b\b ]\n";
-    std::cout << "\n\nYou have reached the end of the program!\nGoodbye.\n\n";
+    for (nexo=nexo_i;nexo<=nexo_f;nexo+=nexo_d) {
+      sim.get_S(nexo,Texo);//load or simulate the source function
+      if (!silent) {
+	std::cout << "current_Sinit = " << sim.current_Sinit << std::endl;
+      }
+      sim.calc_I(IPHb);//calculate with background
+      
+      //print out the results:
+      if (!silent) 
+	std::cout << "\nHere's the result of the calculation:\n\n";
+      if (multidens)
+	std::cout << "nexo = " << nexo << "; ";
+      std::cout	<< "I_calc = [ ";
+      int i;
+      for (i = 0; i < sim.allobsdata[0].nobs-1; i++)
+	std::cout << cal*sim.allobsdata[0].current_I_calc[i] << ", ";
+      std::cout << cal*sim.allobsdata[0].current_I_calc[i] << " ]\n";
+    }
   } else {
     //interpolated simulation
-    std::cout << "Proceeding with interpolated computation.\n";
+    if (!silent) 
+      std::cout << "Proceeding with interpolated computation.\n";
     sim.load_obs(obsname);//load the observation
     VecDoub I_calc;
-    sim.interp_I(0, nexo, Texo, IPHb);//calculate with background
-  
-    //print out the results:
-    std::cout << "\nHere's the result of the calculation:\n"
-	      << "\nI_calc = [ ";
-    for (int i = 0; i < sim.allobsdata[0].nobs; i++)
-      std::cout << cal*sim.allobsdata[0].current_I_calc[i] << ", ";
-    std::cout << "\b\b ]\n";
-    std::cout << "\n\nYou have reached the end of the program!\nGoodbye.\n\n";
+    for (nexo=nexo_i;nexo<=nexo_f;nexo+=nexo_d) {
+      sim.interp_I(0, nexo, Texo, IPHb);//calculate with background
+      
+      //print out the results:
+      if (!silent) 
+	std::cout << "\nHere's the result of the calculation:\n\n";
+      if (multidens)
+	std::cout << "nexo = " << nexo << "; ";
+      std::cout	<< "I_calc = [ ";
+      int i;
+      for (i = 0; i < sim.allobsdata[0].nobs-1; i++)
+	std::cout << cal*sim.allobsdata[0].current_I_calc[i] << ", ";
+      std::cout << cal*sim.allobsdata[0].current_I_calc[i] << " ]\n";
+    }
   }
 
-  
+  if (!silent)
+    std::cout << "\n\nYou have reached the end of the program!\nGoodbye.\n\n";
+
   return 0; 
 }
 

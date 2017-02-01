@@ -105,7 +105,7 @@ struct Sobj {
   Sobj() {init=0;}
   
   //constructor to load sobj from file
-  Sobj(string fnamee) : fname(fnamee) {
+  Sobj(string fnamee, bool silent=FALSE) : fname(fnamee) {
     ifstream Sfile;
     Sfile.open(fname.c_str());//fname must be absolute or local.
     if (Sfile.is_open()) {
@@ -360,13 +360,15 @@ struct Holinterp
 {
   /* Structure to load tabular Holstein functions */
   string Holfilename;
+  bool silent;
   int npts;
   VecDoub tau_vec, Hol_vec;
   Linear_interp Hol_interp;
 
-Holinterp(string Holfilenamee) 
+  Holinterp(string Holfilenamee, bool silent=FALSE) 
   : Holfilename(Holfilenamee) {
-    std::cout << "Reading interpolated Hol values from " << Holfilename << std::endl;
+    if (!silent)
+      std::cout << "Reading interpolated Hol values from " << Holfilename << std::endl;
     //load the data from the file
     ifstream Holfile;
     Holfile.open(Holfilename.c_str());
@@ -404,9 +406,10 @@ struct LOS_integrator
   string HolTfname;
   Holinterp HolTinterp;
   
-  LOS_integrator(string HolTfnamee=HolTfilename) 
-    : HolTfname(HolTfnamee), HolTinterp(HolTfname) {
-    std::cout << "Reading interpolated HolT values from " << HolTfname << std::endl;
+  LOS_integrator(string HolTfnamee=HolTfilename, bool silent=FALSE) 
+    : HolTfname(HolTfnamee), HolTinterp(HolTfname,silent) {
+    if (!silent)
+      std::cout << "Reading interpolated HolT values from " << HolTfname << std::endl;
   }
 
   double integrate(Sobj &S, atmointerp &thisatmointerp,
