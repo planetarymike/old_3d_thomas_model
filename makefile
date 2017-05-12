@@ -41,3 +41,8 @@ multi_corona_test:
 	$(FORT) -g -O0 -c ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
 	$(CC) -g -c test_multi_corona.cpp $(IDIR) $(LIBS) $(MPIFLAGS) $(SRCFNSLOCFLG) -O0 -o test_multi_corona.o
 	$(CC) -g test_multi_corona.o ./required_procedures/ipbackgroundCFR_fun.o -lgfortran $(IDIR) $(LIBS) $(MPIFLAGS) $(SRCFNSLOCFLG) -O0 -o test_multi_corona.x
+
+source_function_init:
+	$(FORT) -O3 -c ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
+	$(CC) -c source_function_init.cpp $(IDIR) $(LIBS) $(MPIFLAGS) $(SRCFNSLOCFLG) -O3 -o source_function_init.o
+	$(CC) source_function_init.o ./required_procedures/ipbackgroundCFR_fun.o -lgfortran $(IDIR) $(LIBS) $(MPIFLAGS) $(SRCFNSLOCFLG) -O3 -o source_function_init.x

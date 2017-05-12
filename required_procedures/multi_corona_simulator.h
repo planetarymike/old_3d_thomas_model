@@ -610,6 +610,20 @@ struct corona_simulator {
     for (int iobs=0;iobs<obsdata.nobs;iobs++)
       thisIPHtrans[iobs]=obsdata.IPHb_model[iobs]*simulate_IPH_transmission(obsdata,iobs, nH, T);
   }
+
+  //initialize a single point in the source function grid
+  void source_function_init(int inH, int iT)
+  {
+    std::cout << "Initializing source function grid for nH = " << nH_vec[inH]
+	      << ", T = " << T_vec[iT] << ".\n";
+    
+    //load or simulate the source function
+    get_S(nH_vec[inH],
+	  T_vec[iT],
+	  S_grid[inH][iT],
+	  atmointerp_grid[inH][iT],
+	  Sinit_grid[inH][iT]);
+  }
   
   //check that intensities exist for interpolation, fill them in if they don't
   void grid_init_bilinear(int inH, int iT)
