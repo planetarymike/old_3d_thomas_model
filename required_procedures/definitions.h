@@ -54,7 +54,7 @@ const double dsmin = 0.1e5; // 0.1km
 const double dsmax = 100e5; // 100km
   
 //maximum number of iterations
-const int maxit = 100000;
+const int maxit = 2000000;
 
 //define the number of boundaries in each dimension
 
