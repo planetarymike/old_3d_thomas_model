@@ -1,4 +1,4 @@
-IDIR=-I./required_procedures/
+IDIR=-I./required_procedures/ 
 CC=g++
 FORT=gfortran
 LIBS=-lgsl -lgslcblas -lm -lgfortran -fPIC
