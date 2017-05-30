@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 IDIR=-I./required_procedures/ 
+=======
+IDIR=-I./required_procedures/ -I/curc/tools/x86_64/rh6/software/gsl/1.16/gcc/5.1.0/include/ -L/curc/tools/x86_64/rh6/software/gsl/1.16/gcc/5.1.0/lib/
+>>>>>>> ddcbf5d65044742572a260a843679d6cc627464c
 CC=g++
 FORT=gfortran
 LIBS=-lgsl -lgslcblas -lm -lgfortran -fPIC
@@ -8,7 +12,7 @@ SRCFNSLOCFLG=-D 'SRCFNSLOC="./source_functions/"'
 
 python_corona_multi_sim:
 	$(FORT) -fPIC -g -c -O3 ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
-	python setup_multi.py build_ext --inplace
+	python setup_multi_janus.py build_ext --inplace
 
 python_corona_sim:
 	$(FORT) -fPIC -g -c -O3 ./required_procedures/ipbackgroundCFR_fun.f -o ./required_procedures/ipbackgroundCFR_fun.o
