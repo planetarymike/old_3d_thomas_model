@@ -29,12 +29,22 @@ int main(int argc, char* argv[]) {
   double cal=1.0;
   bool usertemp=FALSE;
   double Texo=1.0;
+  bool multitemp=FALSE;
+  double T_i=1.0;
+  double T_f=1.0;
+  double T_d=1.0;
+  double Texolist[1024];
+  int nT;
+  int iT;
   bool userdens=FALSE;
   bool multidens=FALSE;
   double nexo=1.0;
   double nexo_i=1.0;
   double nexo_f=1.0;
   double nexo_d=1.0;
+  double nexolist[1024];
+  int nnexo;
+  int inexo;
   bool simulate_IPH=FALSE;
   bool forcesim=FALSE;
   bool nointerp=FALSE;
@@ -71,10 +81,56 @@ int main(int argc, char* argv[]) {
         {
 	  usertemp=TRUE;
 	  i++;
-	  Texo = atof(argv[i]);
-	  if (!silent) {
-	    std::cout << "Fixing temperature at " << Texo << " K.\n";
-	    std::cout << std::endl;
+	  if (strcmp(argv[i],"[") == 0) {
+	    //the number density parameter is an array argument
+	    multitemp=TRUE;
+	    i++;
+	    T_i=atof(argv[i]);
+	    i++;
+	    T_f=atof(argv[i]);
+	    i++;
+	    T_d=atof(argv[i]);
+	    i++;//clears the closing brace
+	    iT=0;
+	    nT=0;
+	    for (Texo=T_i;Texo<=T_f;Texo+=T_d) {
+	      Texolist[iT]=Texo;
+	      nT++;iT++;
+	    }
+	    std::cout << "nT = " << nT << std::endl;
+	    if (!silent) {
+	      std::cout << "Simulating multiple temperatures.\n"
+			<< "From " << T_i << "K to " << T_f << "K \n"
+			<< "in steps of " << T_d << "K .\n";
+	      std::cout << std::endl;
+	    }
+	  } else if (strcmp(argv[i],"{") == 0) {
+	    //the number density parameter is an array argument
+	    multitemp=TRUE;
+	    i++;
+	    nT=0;
+	    while (strcmp(argv[i],"}")) {
+	      Texolist[nT]=atof(argv[i]);
+	      i++;nT++;
+	    }
+	    //	    i++;//clears the closing brace
+	    if (!silent) {
+	      std::cout << "Simulating multiple temperatures.\n";
+	      std::cout << "{ ";
+	      for (iT=0;iT<nT-1;iT++) {
+		std::cout << Texolist[iT] << ", ";
+	      }
+	      std::cout << Texolist[iT] << " }.";
+	      std::cout << std::endl;
+	    }
+	  } else {
+	    Texo = atof(argv[i]);
+	    nT=1;
+	    Texolist[0]=Texo;
+	    if (!silent) {
+	      std::cout << "Fixing temperature at " << Texo << "K .\n";
+	      std::cout << std::endl;
+	    }
 	  }
         }
       else if (strcmp(argv[i], "-n") == 0)
@@ -91,17 +147,42 @@ int main(int argc, char* argv[]) {
 	    i++;
 	    nexo_d=atof(argv[i]);
 	    i++;//clears the closing brace
+	    inexo=0;
+	    nnexo=0;
+	    for (nexo=nexo_i;nexo<=nexo_f;nexo+=nexo_d) {
+	      nexolist[inexo]=nexo;
+	      nnexo++;inexo++;
+	    }
+	    std::cout << "nnexo = " << nnexo << std::endl;
 	    if (!silent) {
 	      std::cout << "Simulating multiple densities.\n"
 			<< "From " << nexo_i << "/cc to " << nexo_f << " /cc \n"
 			<< "in steps of " << nexo_d << "/cc .\n";
 	      std::cout << std::endl;
 	    }
+	  } else if (strcmp(argv[i],"{") == 0) {
+	    //the number density parameter is an array argument
+	    multidens=TRUE;
+	    i++;
+	    nnexo=0;
+	    while (strcmp(argv[i],"}")) {
+	      nexolist[nnexo]=atof(argv[i]);
+	      i++;nnexo++;
+	    }
+	    //	    i++;//clears the closing brace
+	    if (!silent) {
+	      std::cout << "Simulating multiple densities.\n";
+	      std::cout << "{ ";
+	      for (inexo=0;inexo<nnexo-1;inexo++) {
+		std::cout << nexolist[inexo] << ", ";
+	      }
+	      std::cout << nexolist[inexo] << " }.";
+	      std::cout << std::endl;
+	    }
 	  } else {
 	    nexo = atof(argv[i]);
-	    nexo_i=nexo;
-	    nexo_f=nexo;
-	    nexo_d=nexo;
+	    nnexo=1;
+	    nexolist[0]=nexo;
 	    if (!silent) {
 	      std::cout << "Fixing density at " << nexo << " / cm3.\n";
 	      std::cout << std::endl;
@@ -160,23 +241,31 @@ int main(int argc, char* argv[]) {
     if (!silent)
       std::cout << "Direct simulation proceeding.\n";
     sim.load_obs(obsname);//load the observation
-    for (nexo=nexo_i;nexo<=nexo_f;nexo+=nexo_d) {
-      sim.get_S(nexo,Texo);//load or simulate the source function
-      if (!silent) {
-	std::cout << "current_Sinit = " << sim.current_Sinit << std::endl;
+    for (iT=0;iT<nT;iT++) {
+      for (inexo=0;inexo<nnexo;inexo++) {
+	nexo=nexolist[inexo];
+	Texo=Texolist[iT];
+	// std::cout << "inexo = "<<inexo<<std::endl;
+	// std::cout << "nexolist[inexo] = "<<nexolist[inexo]<<std::endl;
+	sim.get_S(nexo,Texo);//load or simulate the source function
+	if (!silent) {
+	  std::cout << "current_Sinit = " << sim.current_Sinit << std::endl;
+	}
+	sim.calc_I(IPHb);//calculate with background
+	
+	//print out the results:
+	if (!silent) 
+	  std::cout << "\nHere's the result of the calculation:\n\n";
+	if (multidens)
+	  std::cout << "nexo = " << nexo << "; ";
+	if (multitemp)
+	  std::cout << "Texo = " << Texo << "; ";
+	std::cout	<< "I_calc = [ ";
+	int i;
+	for (i = 0; i < sim.allobsdata[0].nobs-1; i++)
+	  std::cout << cal*sim.allobsdata[0].current_I_calc[i] << ", ";
+	std::cout << cal*sim.allobsdata[0].current_I_calc[i] << " ]\n";
       }
-      sim.calc_I(IPHb);//calculate with background
-      
-      //print out the results:
-      if (!silent) 
-	std::cout << "\nHere's the result of the calculation:\n\n";
-      if (multidens)
-	std::cout << "nexo = " << nexo << "; ";
-      std::cout	<< "I_calc = [ ";
-      int i;
-      for (i = 0; i < sim.allobsdata[0].nobs-1; i++)
-	std::cout << cal*sim.allobsdata[0].current_I_calc[i] << ", ";
-      std::cout << cal*sim.allobsdata[0].current_I_calc[i] << " ]\n";
     }
   } else {
     //interpolated simulation
@@ -184,22 +273,29 @@ int main(int argc, char* argv[]) {
       std::cout << "Proceeding with interpolated computation.\n";
     sim.load_obs(obsname);//load the observation
     VecDoub I_calc;
-    for (nexo=nexo_i;nexo<=nexo_f;nexo+=nexo_d) {
-      sim.interp_I(0, nexo, Texo, IPHb);//calculate with background
-      
-      //print out the results:
-      if (!silent) 
-	std::cout << "\nHere's the result of the calculation:\n\n";
-      if (multidens)
-	std::cout << "nexo = " << nexo << "; ";
-      std::cout	<< "I_calc = [ ";
-      int i;
-      for (i = 0; i < sim.allobsdata[0].nobs-1; i++)
-	std::cout << cal*sim.allobsdata[0].current_I_calc[i] << ", ";
-      std::cout << cal*sim.allobsdata[0].current_I_calc[i] << " ]\n";
+    for (iT=0;iT<nT;iT++) {
+      for (inexo=0;inexo<nnexo;inexo++) {
+	nexo=nexolist[inexo];
+	Texo=Texolist[iT];
+	// std::cout << "inexo = "<<inexo<<std::endl;
+	// std::cout << "nexolist[inexo] = "<<nexolist[inexo]<<std::endl;
+	sim.interp_I(0, nexo, Texo, IPHb);//calculate with background
+	
+	//print out the results:
+	if (!silent) 
+	  std::cout << "\nHere's the result of the calculation:\n\n";
+	if (multidens)
+	  std::cout << "nexo = " << nexo << "; ";
+	if (multitemp)
+	  std::cout << "Texo = " << Texo << "; ";
+	std::cout	<< "I_calc = [ ";
+	int i;
+	for (i = 0; i < sim.allobsdata[0].nobs-1; i++)
+	  std::cout << cal*sim.allobsdata[0].current_I_calc[i] << ", ";
+	std::cout << cal*sim.allobsdata[0].current_I_calc[i] << " ]\n";
+      }
     }
   }
-
   if (!silent)
     std::cout << "\n\nYou have reached the end of the program!\nGoodbye.\n\n";
 
