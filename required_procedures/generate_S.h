@@ -472,7 +472,7 @@ void generate_S(const double nexo,
   solfile << std::endl;
   //finally, the values
   for (row = 0; row < nrows; row++) {
-    solfile << solfile.width(dbl::digits10+10);
+    solfile.width(dbl::digits10+10);
     solfile.precision(dbl::digits10);
     solfile << sol[row] << std::endl;
   }
