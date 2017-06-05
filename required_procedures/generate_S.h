@@ -449,7 +449,7 @@ void generate_S(const double nexo,
   solfile.width(20);
   solfile << nrpts << std::endl;
   for (irw = 0; irw < nrpts; irw++) {
-    solfile.width(dbl::digits10+5);
+    solfile.width(dbl::digits10+10);
     solfile.precision(dbl::digits10);
     solfile << rpts[irw];
   }
@@ -457,7 +457,7 @@ void generate_S(const double nexo,
   solfile.width(20);
   solfile << nthetapts << std::endl;
   for (itw = 0; itw < nthetapts; itw++) {
-    solfile.width(dbl::digits10+5);
+    solfile.width(dbl::digits10+10);
     solfile.precision(dbl::digits10);
     solfile << thetapts[itw];
   }
@@ -465,14 +465,14 @@ void generate_S(const double nexo,
   solfile.width(20);
   solfile << nphipts << std::endl;
   for (ipw = 0; ipw < nphipts; ipw++) {
-    solfile.width(dbl::digits10+5);
+    solfile.width(dbl::digits10+10);
     solfile.precision(dbl::digits10);
     solfile << phipts[ipw];
   }
   solfile << std::endl;
   //finally, the values
   for (row = 0; row < nrows; row++) {
-    solfile << solfile.width(dbl::digits10+5);
+    solfile << solfile.width(dbl::digits10+10);
     solfile.precision(dbl::digits10);
     solfile << sol[row] << std::endl;
   }
