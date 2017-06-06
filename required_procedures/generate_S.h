@@ -111,12 +111,12 @@ void generate_S(const double nexo,
   string solfname;
   solfname = Sfilename(nexo,Texo);
   solfile.open(solfname.c_str());
-  /* ofstream kfile, yfile; */
-  /* string kfilename, yfilename; */
-  /* kfilename = auxfilename("kern",nexo,Texo); */
-  /* kfile.open(kfilename.c_str()); */
-  /* yfilename = auxfilename("y",nexo,Texo); */
-  /* yfile.open(yfilename.c_str()); */
+  ofstream kfile, yfile;
+  string kfilename, yfilename;
+  kfilename = auxfilename("kern",nexo,Texo);
+  kfile.open(kfilename.c_str());
+  yfilename = auxfilename("y",nexo,Texo);
+  yfile.open(yfilename.c_str());
   
   // auxiliary variables used in computing integrals
   double x1, y1, z1, xpt, ypt, zpt; // ephemeral cartesian coordinates
@@ -477,40 +477,60 @@ void generate_S(const double nexo,
     solfile << sol[row] << std::endl;
   }
 
-  //write kernel and yvec to file;
-  /* std::cout << "Writing kernel and single scattering vector to file." << std::endl; */
-  /* for (row = 0; row < nrows; row++) { */
-  /*   for (col = 0; col < ncols; col++) { */
-  /*     //	Hfile.width(20); */
-  /*     //	Hfile << nHvals[row][col]; */
-  /*     //	CO2file.width(20); */
-  /*     //	CO2file << nCO2vals[row][col]; */
-  /*     kfile.width(20); */
-  /*     kfile << kvals[row][col]; */
-  /*   } */
-  /*   //      Hfile << std::endl; */
-  /*   //      CO2file << std::endl; */
-  /*   kfile << std::endl; */
+  /* write kernel and yvec to file; */
+  std::cout << "Writing kernel and single scattering vector to file." << std::endl;
+  for (row = 0; row < nrows; row++) {
+    for (col = 0; col < ncols; col++) {
+      //	Hfile.width(20);
+      //	Hfile << nHvals[row][col];
+      //	CO2file.width(20);
+      //	CO2file << nCO2vals[row][col];
+      solfile.width(dbl::digits10+10);
+      solfile.precision(dbl::digits10);
+      kfile << kvals[row][col];
+    }
+    //      Hfile << std::endl;
+    //      CO2file << std::endl;
+    kfile << std::endl;
+  }
+  kfile.close();
 
-
-  /*   irw = row/((nthetapts-1)*(nphipts-1)); */
-  /*   itw = (row-irw*(nthetapts-1)*(nphipts-1))/(nphipts-1); */
-  /*   ipw = row%(nphipts-1); */
-  /*   r1 = (rpts[irw]+rpts[irw+1])/2; */
-  /*   t1 = (thetapts[itw]+thetapts[itw+1])/2; */
-  /*   p1 = (phipts[ipw]+phipts[ipw+1])/2; */
-  /*   yfile.width(20); */
-  /*   yfile << r1; */
-  /*   yfile.width(20); */
-  /*   yfile << t1; */
-  /*   yfile.width(20); */
-  /*   yfile << p1; */
-  /*   yfile.width(20); */
-  /*   yfile << yvec[row] << std::endl; */
-  /* } */
-  /* kfile.close(); */
-  /* yfile.close(); */
-
+  yfile.width(20);
+  yfile << nexo;
+  yfile.width(20);
+  yfile << Texo << std::endl;
+  //rpts, tpts, ppts
+  yfile.width(20);
+  yfile << nrpts << std::endl;
+  for (irw = 0; irw < nrpts; irw++) {
+    yfile.width(dbl::digits10+10);
+    yfile.precision(dbl::digits10);
+    yfile << rpts[irw];
+  }
+  yfile << std::endl;
+  yfile.width(20);
+  yfile << nthetapts << std::endl;
+  for (itw = 0; itw < nthetapts; itw++) {
+    yfile.width(dbl::digits10+10);
+    yfile.precision(dbl::digits10);
+    yfile << thetapts[itw];
+  }
+  yfile << std::endl;
+  yfile.width(20);
+  yfile << nphipts << std::endl;
+  for (ipw = 0; ipw < nphipts; ipw++) {
+    yfile.width(dbl::digits10+10);
+    yfile.precision(dbl::digits10);
+    yfile << phipts[ipw];
+  }
+  yfile << std::endl;
+  //finally, the values
+  for (row = 0; row < nrows; row++) {
+    yfile.width(dbl::digits10+10);
+    yfile.precision(dbl::digits10);
+    yfile << yvec[row] << std::endl;
+  }
+  yfile.close();
   
   // print time elapsed
   clock_t finish = clock();
