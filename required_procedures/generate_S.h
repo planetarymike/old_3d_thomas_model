@@ -488,6 +488,7 @@ void generate_S(const double nexo,
       solfile.width(dbl::digits10+10);
       solfile.precision(dbl::digits10);
       kfile << kvals[row][col];
+      kfile << "\t";
     }
     //      Hfile << std::endl;
     //      CO2file << std::endl;
