@@ -512,6 +512,8 @@ struct LOS_integrator
       //compute the optical depth
       tauH += ainv*ds;
       tauCO2 += dtau_CO2(rrpt,tpt,ppt,thisatmointerp)*ds;
+      if (tauH>taumax)
+	throw("maximum optical depth exceeded!\n")
 
       intensity += HolTinterp.interp(tauH)*exp(-tauCO2)*S(rrpt,tpt,ppt)*ds;
 

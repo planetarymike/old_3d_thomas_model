@@ -306,7 +306,9 @@ void generate_S(const double nexo,
 		  tauH   += ds* (sH01*nH1+sH02*nH2)/2;
 		  tauCO2 += ds*sCO2*(nCO21+nCO22)/2;
 		  coef   += HolG_lookup.interp(tauH)*exp(-tauCO2)*ds;
-		  
+		  if (tauH>taumax)
+		    throw("maximum optical depth exceeded!\n")
+
 		  nH1=nH2;
 		  nCO21=nCO22;
 		  sH01=sH02;
@@ -403,6 +405,8 @@ void generate_S(const double nexo,
       std::cout << "Getting H optical depth...\n";
       dtau_H_int dtauH(thisatmointerp);
       tauHcol = qlinetrap_2pt(dtauH, r1_vec, r2_vec, 1e-3);
+      if (tauHcol>taumax)
+	throw("maximum optical depth exceeded!\n")
       std::cout << "  ... H optical depth = "<< tauHcol << ".\n";
 
       // put them together into the y-vec

@@ -2,13 +2,14 @@
 #include <iostream>
 #include <fstream>
 #include "rad_trans.h"
-
+#include <limits> //sizes of double
+typedef std::numeric_limits< double > dbl;
 
 int main() {
   // a program to generate intepolation points for the function HolT
   double taubottom=0.0;
-  double tautop=100.0;
-  double taustep=0.001;
+  double tautop=10000.0;
+  double taustep=0.01;
   int ntaus=(tautop-taustep)/taustep+1;
 
   ofstream HolGfile;
@@ -21,9 +22,12 @@ int main() {
   HolGfile.width(w);
   HolGfile << "HolG(tau)" << std::endl;
   for(double tau=taubottom; tau < tautop+taustep; tau+=taustep) {
-    HolGfile.width(w);
+    HolGfile.width(dbl::digits10+10);
+    HolGfile.precision(dbl::digits10);
     HolGfile << tau;
-    HolGfile.width(w);
+    HolGfile << "\t";
+    HolGfile.width(dbl::digits10+10);
+    HolGfile.precision(dbl::digits10);
     HolGfile << HolG(tau) << std::endl;
   }
   HolGfile.close();

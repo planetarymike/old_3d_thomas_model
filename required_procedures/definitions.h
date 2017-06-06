@@ -49,6 +49,9 @@ const double dsfrac = 0.05;//fraction of the smallest box dimension
 //differential optical depth
 const double dtau = 0.005;
 
+//maximum tau for which HolG and HolT have been precomputed:
+const double taumax = 10000.;
+
 //max and min path length
 const double dsmin = 0.1e5; // 0.1km
 const double dsmax = 100e5; // 100km
@@ -123,7 +126,7 @@ const string losproffname=tabdataloc+"H_LOS_prof.dat";//SRCFNSLOC is
 						      //compile-time
 
 //define the location to search for and store generated source functions
-const string srcfnsloc="./source_functions/";
+const string srcfnsloc="./new_source_functions/";
   
 //______________________________________________________
 //----------------END CONTROL PARAMETERS----------------
