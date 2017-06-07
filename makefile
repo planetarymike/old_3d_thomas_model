@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 IDIR=-I./required_procedures/ 
-=======
-IDIR=-I./required_procedures/ -I/curc/tools/x86_64/rh6/software/gsl/1.16/gcc/5.1.0/include/ -L/curc/tools/x86_64/rh6/software/gsl/1.16/gcc/5.1.0/lib/
->>>>>>> ddcbf5d65044742572a260a843679d6cc627464c
 CC=g++
 FORT=gfortran
 LIBS=-lgsl -lgslcblas -lm -lgfortran -fPIC
