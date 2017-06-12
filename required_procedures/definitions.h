@@ -50,7 +50,7 @@ const double dsfrac = 0.05;//fraction of the smallest box dimension
 const double dtau = 0.005;
 
 //maximum tau for which HolG and HolT have been precomputed:
-const double taumax = 10000.;
+const double taumax = 50000.;
 
 //max and min path length
 const double dsmin = 0.1e5; // 0.1km

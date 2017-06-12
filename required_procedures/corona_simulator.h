@@ -68,15 +68,35 @@ struct corona_simulator {
     current_Sinit = 0;
     
     nH_vec.resize(nnH);
-    T_vec.resize(nT);
-    for (int inH=0;inH<nnH;inH++) {
-      if (nHgridlog) {
-	nH_vec[inH]=exp(log(nHi)+(log(nHf)-log(nHi))/(nnH-1)*inH);
-      } else {
-	nH_vec[inH]=nHi+(nHf-nHi)/(nnH-1)*inH;
-      }
+    if (nHgridextend) {
+        //hack to extend grid to larger densities
+        for (int inH=0;inH<nnH;inH++) {
+            if (inH<nnH-n_nHgridextend) {
+                if (nHgridlog) {
+                    nH_vec[inH]=exp(log(nHi)+(log(nHlogf)-log(nHi))/(nnH-n_nHgridextend-1)*inH);
+                } else {
+                    nH_vec[inH]=nHi+(nHf-nHi)/(nnH-1)*inH;
+                }
+                //	  std::cout << "nH_vec[" << inH << "] = " << nH_vec[inH] << std::endl;
+            } else {
+                nH_vec[inH]=nHlogf*(inH-(nnH-n_nHgridextend)+2);
+                //	  std::cout << "nH_vec[" << inH << "] = " << nH_vec[inH] << std::endl;
+            }
+        }
+        //      std::cin.get();
+    } else {
+        nH_vec.resize(nnH);
+        for (int inH=0;inH<nnH;inH++) {
+            if (nHgridlog) {
+                nH_vec[inH]=exp(log(nHi)+(log(nHf)-log(nHi))/(nnH-1)*inH);
+            } else {
+                nH_vec[inH]=nHi+(nHf-nHi)/(nnH-1)*inH;
+            }
+        }
     }
-    nH_terp = Linear_interp(nH_vec,nH_vec); 
+    nH_terp = Linear_interp(nH_vec,nH_vec);
+      
+    T_vec.resize(nT);
     for (int iT=0;iT<nT;iT++) {
       if (Tgridlog) {
 	T_vec[iT]=exp(log(Ti)+(log(Tf)-log(Ti))/(nT-1)*iT);
@@ -234,6 +254,7 @@ struct corona_simulator {
     if (!forcesim) { 
 	//what would the filename look like?
 	string Sfname=Sfilename(nH,T);
+        std::cout << "trying to load from " << Sfname << std::endl;
 	ifstream Sfile(Sfname.c_str());
 	if (Sfile.good()) { //file named like this exists?
 	  Sfile.seekg(0, ios::end);

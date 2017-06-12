@@ -306,15 +306,17 @@ void generate_S(const double nexo,
 		  tauH   += ds* (sH01*nH1+sH02*nH2)/2;
 		  tauCO2 += ds*sCO2*(nCO21+nCO22)/2;
 		  coef   += HolG_lookup.interp(tauH)*exp(-tauCO2)*ds;
-		  if (tauH>taumax)
-		    throw("maximum optical depth exceeded!\n")
-
 		  nH1=nH2;
 		  nCO21=nCO22;
 		  sH01=sH02;
 		  
 		  ds = ds < dtau/(sH02*nH2) ? ds : dtau/(sH02*nH2);
 		}
+		if (tauH>taumax) {
+		  std::cout << "tauH = " << tauH << std::endl;
+		  throw("maximum optical depth exceeded!");
+		}
+
 
 		rdx=rterp.index(rpt);
 		tdx=tterp.index(tpt);
