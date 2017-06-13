@@ -12,7 +12,7 @@ setup(ext_modules = cythonize(Extension(
     extra_compile_args=["-O3","-lgslcblas"],
     extra_link_args=["-lgsl","-lgslcblas","-lm","-lgfortran","-fPIC"],
     library_dirs=["/curc/tools/x86_64/rh6/software/gsl/1.16/gcc/5.1.0/lib"],
-    define_macros=[('SRCFNSLOC','"./source_functions/"')],
+    define_macros=[('SRCFNSLOC','"/projects/chaffin/coronal_scan_analysis_Sep2016/corona_sim/source_functions/"')],
     include_dirs=["./required_procedures/",numpy.get_include(),"/curc/tools/x86_64/rh6/software/gsl/1.16/gcc/5.1.0/include"],
     extra_objects=["./required_procedures/ipbackgroundCFR_fun.o"]))
 )
