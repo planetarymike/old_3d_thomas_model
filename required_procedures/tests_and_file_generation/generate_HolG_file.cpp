@@ -8,8 +8,8 @@ typedef std::numeric_limits< double > dbl;
 int main() {
   // a program to generate intepolation points for the function HolT
   double taubottom=0.0;
-  double tautop=10000.0;
-  double taustep=0.01;
+  double tautop=100000.0;
+  double taustep=0.05;
   int ntaus=(tautop-taustep)/taustep+1;
 
   ofstream HolGfile;
