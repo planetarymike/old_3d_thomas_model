@@ -111,6 +111,9 @@ const double      Ti=100;
 const double      Tf=2000;
 const bool  Tgridlog=FALSE;
 
+//define the interpolation style for nH,T interpolation
+const string interpstyle="bilinear";
+
   
 //define the HolG and HolT interpolation function locations
 const string tabdataloc="./tabulated_data/";
