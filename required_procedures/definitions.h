@@ -112,10 +112,11 @@ const double      Tf=2000;
 const bool  Tgridlog=FALSE;
 
   
-//define the HolG and HolT interpolation function locations
+//define the interpolation data locations
 const string tabdataloc="./tabulated_data/";
 const string HolTfilename=tabdataloc+"HolTinterp.dat";
 const string HolGfilename=tabdataloc+"HolGinterp.dat";
+const string eff_filename=tabdataloc+"eff_interp.dat";
 
 //  Holinterp HolG_lookup("./tabulated_data/HolGinterp.dat");
 
@@ -126,7 +127,7 @@ const string losproffname=tabdataloc+"H_LOS_prof.dat";//SRCFNSLOC is
 						      //compile-time
 
 //define the location to search for and store generated source functions
-const string srcfnsloc="./new_source_functions/";
+const string srcfnsloc="./source_functions/";
   
 //______________________________________________________
 //----------------END CONTROL PARAMETERS----------------

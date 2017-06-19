@@ -5,7 +5,7 @@
 #include <fstream>
 #include "nr3.h"
 #include "multi_corona_simulator.h" //simulation routines for synthetic atmospheres
-
+#include "eff_interp.h" //table to exchange between temperature and effusion velocity
 
 //compile: 
 //  \/
@@ -25,8 +25,10 @@ int main(int argc, char* argv[]) {
   string obsname;
   bool userIPH=FALSE;
   double IPHb=0.0;
+
   bool usercal=FALSE;
   double cal=1.0;
+
   bool usertemp=FALSE;
   double Texo=1.0;
   bool multitemp=FALSE;
@@ -36,6 +38,15 @@ int main(int argc, char* argv[]) {
   double Texolist[1024];
   int nT;
   int iT;
+
+  bool useresc=FALSE;
+  double esc=1.0;
+  bool multiesc=FALSE;
+  double esc_i=1.0;
+  double esc_f=1.0;
+  double esc_d=1.0;
+  double esclist[1024];
+
   bool userdens=FALSE;
   bool multidens=FALSE;
   double nexo=1.0;
@@ -45,6 +56,7 @@ int main(int argc, char* argv[]) {
   double nexolist[1024];
   int nnexo;
   int inexo;
+
   bool simulate_IPH=FALSE;
   bool forcesim=FALSE;
   bool nointerp=FALSE;
@@ -82,7 +94,7 @@ int main(int argc, char* argv[]) {
 	  usertemp=TRUE;
 	  i++;
 	  if (strcmp(argv[i],"[") == 0) {
-	    //the number density parameter is an array argument
+	    //the temperature parameter is an array argument
 	    multitemp=TRUE;
 	    i++;
 	    T_i=atof(argv[i]);
@@ -105,7 +117,7 @@ int main(int argc, char* argv[]) {
 	      std::cout << std::endl;
 	    }
 	  } else if (strcmp(argv[i],"{") == 0) {
-	    //the number density parameter is an array argument
+	    //the temperature parameter is an array argument
 	    multitemp=TRUE;
 	    i++;
 	    nT=0;
@@ -129,6 +141,64 @@ int main(int argc, char* argv[]) {
 	    Texolist[0]=Texo;
 	    if (!silent) {
 	      std::cout << "Fixing temperature at " << Texo << "K .\n";
+	      std::cout << std::endl;
+	    }
+	  }
+        }
+      else if (strcmp(argv[i], "-e") == 0)
+        {
+	  useresc=TRUE;
+	  i++;
+	  if (strcmp(argv[i],"[") == 0) {
+	    //the escape flux parameter is an array argument,
+	    //producing multiple temperatures
+	    multitemp=TRUE;
+	    i++;
+	    esc_i=atof(argv[i]);
+	    i++;
+	    esc_f=atof(argv[i]);
+	    i++;
+	    esc_d=atof(argv[i]);
+	    i++;//clears the closing brace
+	    iT=0;
+	    nT=0;
+	    for (esc=esc_i;esc<=esc_f;esc+=esc_d) {
+	      esclist[iT]=esc;
+	      nT++;iT++;
+	    }
+	    std::cout << "nesc = " << nT << std::endl;
+	    if (!silent) {
+	      std::cout << "Simulating multiple escape fluxes (via temperature).\n"
+			<< "From " << esc_i << "/cm2/s to " << esc_f << "/cm2/s \n"
+			<< "in steps of " << esc_d << "/cm2/s .\n";
+	      std::cout << std::endl;
+	    }
+	  } else if (strcmp(argv[i],"{") == 0) {
+	    //the escape flux parameter is an array argument,
+	    //producing multiple temperatures
+	    multitemp=TRUE;
+	    i++;
+	    nT=0;
+	    while (strcmp(argv[i],"}")) {
+	      esclist[nT]=atof(argv[i]);
+	      i++;nT++;
+	    }
+	    //	    i++;//clears the closing brace
+	    if (!silent) {
+	      std::cout << "Simulating multiple escape fluxes (via temperature).\n";
+	      std::cout << "{ ";
+	      for (iT=0;iT<nT-1;iT++) {
+		std::cout << esclist[iT] << ", ";
+	      }
+	      std::cout << esclist[iT] << " }.";
+	      std::cout << std::endl;
+	    }
+	  } else {
+	    esc = atof(argv[i]);
+	    nT=1;
+	    esclist[0]=esc;
+	    if (!silent) {
+	      std::cout << "Fixing escape flux at " << esc << "/cm2/s .\n";
 	      std::cout << std::endl;
 	    }
 	  }
@@ -235,7 +305,12 @@ int main(int argc, char* argv[]) {
     cal=1.0;
   }
 
+  //make sure the user has not specified both escape flux and temperature
+  if (usertemp&&useresc)
+    throw("Please specify either temperature or escape flux, but not both.")
+  
   corona_simulator sim(forcesim,simulate_IPH,silent);
+  eff_interp effinterp(eff_filename,silent);
   if (nointerp) {
     //direct simulation for these conditions
     if (!silent)
@@ -244,9 +319,10 @@ int main(int argc, char* argv[]) {
     for (iT=0;iT<nT;iT++) {
       for (inexo=0;inexo<nnexo;inexo++) {
 	nexo=nexolist[inexo];
-	Texo=Texolist[iT];
-	// std::cout << "inexo = "<<inexo<<std::endl;
-	// std::cout << "nexolist[inexo] = "<<nexolist[inexo]<<std::endl;
+	if (!useresc)
+	  Texo=Texolist[iT];
+	if (useresc)
+	  Texo=effinterp.interp(esclist[iT]/nexo);
 	sim.get_S(nexo,Texo);//load or simulate the source function
 	if (!silent) {
 	  std::cout << "current_Sinit = " << sim.current_Sinit << std::endl;
@@ -258,8 +334,12 @@ int main(int argc, char* argv[]) {
 	  std::cout << "\nHere's the result of the calculation:\n\n";
 	if (multidens)
 	  std::cout << "nexo = " << nexo << "; ";
-	if (multitemp)
-	  std::cout << "Texo = " << Texo << "; ";
+	if (multitemp) {
+	  if (!useresc)
+	    std::cout << "Texo = " << Texo << "; ";
+	  if (useresc)
+	    std::cout << "esc = " << esclist[iT] << "; Texo = " << Texo << "; ";	      
+	}
 	std::cout	<< "I_calc = [ ";
 	int i;
 	for (i = 0; i < sim.allobsdata[0].nobs-1; i++)
@@ -276,7 +356,10 @@ int main(int argc, char* argv[]) {
     for (iT=0;iT<nT;iT++) {
       for (inexo=0;inexo<nnexo;inexo++) {
 	nexo=nexolist[inexo];
-	Texo=Texolist[iT];
+	if (!useresc)
+	  Texo=Texolist[iT];
+	if (useresc)
+	  Texo=effinterp.interp(esclist[iT]/nexo);
 	// std::cout << "inexo = "<<inexo<<std::endl;
 	// std::cout << "nexolist[inexo] = "<<nexolist[inexo]<<std::endl;
 	sim.interp_I(0, nexo, Texo, IPHb);//calculate with background
@@ -286,8 +369,12 @@ int main(int argc, char* argv[]) {
 	  std::cout << "\nHere's the result of the calculation:\n\n";
 	if (multidens)
 	  std::cout << "nexo = " << nexo << "; ";
-	if (multitemp)
-	  std::cout << "Texo = " << Texo << "; ";
+	if (multitemp) {
+	  if (!useresc)
+	    std::cout << "Texo = " << Texo << "; ";
+	  if (useresc)
+	    std::cout << "esc = " << esclist[iT] << "; Texo = " << Texo << "; ";	      
+	}
 	std::cout	<< "I_calc = [ ";
 	int i;
 	for (i = 0; i < sim.allobsdata[0].nobs-1; i++)
