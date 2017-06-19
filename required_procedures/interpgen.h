@@ -49,24 +49,25 @@ struct atmointerp {
 				     fname(fnamee),
 				     silent(silentt)
   {
-    co2coefs[0]=-1733.67;
-    co2coefs[1]=1845.05;
-    co2coefs[2]=-738.211;
-    co2coefs[3]=142.973;
-    co2coefs[4]=-13.4971;
-    co2coefs[5]=0.496014;
-    hcoefs1[0]=-113383.;
-    hcoefs1[1]=110767.;
-    hcoefs1[2]=-43170.6;
-    hcoefs1[3]=8394.19;
-    hcoefs1[4]=-814.51;
-    hcoefs1[5]=31.5595;
-    hcoefs2[0]=70.6367;
-    hcoefs2[1]=-39.3017;
-    hcoefs2[2]=10.1217;
-    hcoefs2[3]=-1.24821;
-    hcoefs2[4]=0.0724967;
-    hcoefs2[5]=-0.00161804;
+    // co2coefs[0]=-1733.67;//where did these magic coefficients come from? The world may never know.
+    // co2coefs[1]=1845.05;// I think these were a hermite interpolation
+    // 			// of these quantities at some point
+    // co2coefs[2]=-738.211;//doesn't look like they're used anywhere now.
+    // co2coefs[3]=142.973;
+    // co2coefs[4]=-13.4971;
+    // co2coefs[5]=0.496014;
+    // hcoefs1[0]=-113383.;
+    // hcoefs1[1]=110767.;
+    // hcoefs1[2]=-43170.6;
+    // hcoefs1[3]=8394.19;
+    // hcoefs1[4]=-814.51;
+    // hcoefs1[5]=31.5595;
+    // hcoefs2[0]=70.6367;
+    // hcoefs2[1]=-39.3017;
+    // hcoefs2[2]=10.1217;
+    // hcoefs2[3]=-1.24821;
+    // hcoefs2[4]=0.0724967;
+    // hcoefs2[5]=-0.00161804;
     
     if (fname.size() == 0) {
       char filename[100];
