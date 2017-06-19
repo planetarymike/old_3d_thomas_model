@@ -28,7 +28,7 @@ struct eff_interp
     efffile.open(efffilename.c_str());
     //read number of points
     efffile >> npts;
-    std::cout << "npts = " << npts << std::endl;
+    /* std::cout << "npts = " << npts << std::endl; */
     temp_vec.resize(npts);
     eff_vec.resize(npts);
     // clear the header
