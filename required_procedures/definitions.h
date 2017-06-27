@@ -94,14 +94,15 @@ const bool usechauH = FALSE;
 
 //grid definitions (for interpolating source functions)
 //grid is populated on demand as source functions are requested.
-const bool nHgridextend=TRUE;//this is a hack to extend the grid at
+const bool nHgridextend=FALSE;//this is a hack to extend the grid at
 			     //high densities because some fits
 			     //wandered off there.
-const int  n_nHgridextend=19;
+const int    n_nHgridextend=4*19;
+const double nH_extend_increment=250000;//increment by which to extend grid
 
 const int        nnH = (nHgridextend) ? 100+n_nHgridextend : 100;
 const double     nHi = 10000;
-const double     nHlogf = 1000000;//getting really hacky here to
+const double     nHlogf = 20000000;//getting really hacky here to
 				  //maintain backwards compatibility
 const double     nHf = (nHgridextend) ? 1e6*(n_nHgridextend+1) : nHlogf;
 const bool nHgridlog = TRUE;
