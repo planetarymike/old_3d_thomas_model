@@ -799,24 +799,38 @@ struct corona_simulator {
 		double IPHb=0.0) {
 
     obsdata.current_I_calc.resize(obsdata.nobs);
-    for (int iobs=0; iobs<obsdata.nobs; iobs++)
-      obsdata.current_I_calc[iobs]=interp_iobs_bicubic(obsdata, iobs, nHp, Tp, IPHb);
+    for (int iobs=0; iobs<obsdata.nobs; iobs++) {
+      if (interpstyle=="bicubic") {
+	obsdata.current_I_calc[iobs]=interp_iobs_bicubic(obsdata, iobs, nHp, Tp, IPHb);
+      }	else if (interpstyle=="bilinear") {
+	obsdata.current_I_calc[iobs]=interp_iobs_bilinear(obsdata, iobs, nHp, Tp, IPHb);
+      } else {
+	throw("unknown interp style!");
+      }
+    }
   }
+
   void interp_I(int idata,
 		double nHp, double Tp, 
 		double IPHb=0.0) {
-
     int tnobs=allobsdata[idata].nobs;
     allobsdata[idata].current_I_calc.resize(tnobs);
-    for (int iobs=0; iobs<tnobs; iobs++)
-      allobsdata[idata].current_I_calc[iobs]=interp_iobs_bicubic(allobsdata[idata], iobs, nHp, Tp, IPHb);
+    for (int iobs=0; iobs<tnobs; iobs++) {
+      if (interpstyle=="bicubic") {
+	allobsdata[idata].current_I_calc[iobs]=interp_iobs_bicubic(allobsdata[idata], iobs, nHp, Tp, IPHb);
+      } else if (interpstyle=="bilinear") {
+	allobsdata[idata].current_I_calc[iobs]=interp_iobs_bilinear(allobsdata[idata], iobs, nHp, Tp, IPHb);
+      } else {
+	throw("unknown interp style!");
+      }
+    }
   }
   void interp_I(double nHp, double Tp, 
 		double IPHb=0.0) {
     for (int idata=0; idata<nobsdata; idata++)
       interp_I(allobsdata[idata], nHp, Tp, IPHb);
   }
-
+  
   
 };
 
