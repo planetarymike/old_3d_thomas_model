@@ -358,14 +358,14 @@ struct corona_simulator {
       for (int inH=0;inH<nnH;inH++) {
 	if (nHgridlog) {
 	  nH_vec[inH]=exp(log(nHi)+(log(nHf)-log(nHi))/(nnH-1)*inH);
-	  //	  std::cout << "nH_vec[" << inH << "] = " << nH_vec[inH] << std::endl;
+	  // std::cout << "nH_vec[" << inH << "] = " << nH_vec[inH] << std::endl;
 	} else {
 	  nH_vec[inH]=nHi+(nHf-nHi)/(nnH-1)*inH;
 	  //	  std::cout << "nH_vec[" << inH << "] = " << nH_vec[inH] << std::endl;
 	}
       }
     }
-    //    std::cin.get();
+    //       std::cin.get();
     nH_terp = Linear_interp(nH_vec,nH_vec); 
 
     T_vec.resize(nT);

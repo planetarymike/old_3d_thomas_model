@@ -100,8 +100,9 @@ const bool nHgridextend=FALSE;//this is a hack to extend the grid at
 const int    n_nHgridextend=4*19;
 const double nH_extend_increment=250000;//increment by which to extend grid
 
-const int        nnH = (nHgridextend) ? 100+n_nHgridextend : 100;
-const double     nHi = 10000;
+const int        nnHbase = 500;//number of basic grid points, before grid extension
+const int        nnH = (nHgridextend) ? nnHbase+n_nHgridextend : nnHbase;
+const double     nHi = 1;
 const double     nHlogf = 20000000;//getting really hacky here to
 				  //maintain backwards compatibility
 const double     nHf = (nHgridextend) ? 1e6*(n_nHgridextend+1) : nHlogf;
@@ -131,7 +132,7 @@ const string losproffname=tabdataloc+"H_LOS_prof.dat";//SRCFNSLOC is
 						      //compile-time
 
 //define the location to search for and store generated source functions
-const string srcfnsloc="./new_source_functions/";
+const string srcfnsloc="/scratch/summit/chaffin/source_functions/";
   
 //______________________________________________________
 //----------------END CONTROL PARAMETERS----------------
