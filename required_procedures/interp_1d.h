@@ -51,8 +51,7 @@ struct Base_interp
     }
   }
 
-  Base_interp&
-  operator= (const Base_interp &B) {
+  Base_interp& operator= (const Base_interp &B) {
     n=B.n;
     mmm=B.mmm;
     jsav=B.jsav;
@@ -69,6 +68,7 @@ struct Base_interp
       xx[i]=B.xx[i];
       yy[i]=B.yy[i];
     }
+    return *this;
   }
 
   ~Base_interp() {
