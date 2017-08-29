@@ -545,7 +545,9 @@ void generate_S(const double nexo,
   int hrs = secs/3600;
   int mins = (secs - hrs*3600)/60;
   secs = secs - hrs*3600 - mins*60;
-  std::cout << "Elapsed time is " 
+  std::cout << "For nH = " << nexo
+	    << " , T = " << Texo << " , "
+            << "elapsed time is " 
 	    << hrs << " hours, " 
 	    << mins << " minutes, and " 
 	    << secs << " seconds.\n";
