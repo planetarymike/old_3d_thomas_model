@@ -29,21 +29,46 @@ c     lines 234-236 of Quemerais' original code.
 c     
 c     I'll be converting this code to accept command line arguments for
 c     these. The first should be the solar lyman alpha line center
-c     intensity in photons/cm2/s/Ang, arguments 2-4 the x,y,z, position of Mars, in AU, in
-c     ecliptic coordinates; arguments 5-7 the x,y,z components of the
-c     look direction in ecliptic coordinates.
+c     intensity in photons/cm2/s/Ang, arguments 2-4 the x,y,z, position
+c     of Mars, in AU, in ecliptic coordinates; arguments 5-7 the x,y,z
+c     components of the look direction in ecliptic coordinates.
 c
 c     In fortran, all declarations must proceed all executable
 c     statements, so the code is harder to read.
 c
 c      
-      PARAMETER (NR=60,NK=19)
+c     Eric didn't define his variables, which is causing some compiler
+c     problems...
+      IMPLICIT NONE
+      REAL, INTENT(IN) :: fs, xpos, ypos, zpos, u1, v1, w1
+      REAL, INTENT(OUT) ::  fln
 c--------------------------------------------------------------------------
-      COMMON/DIRVENT/ RAVENT,DCVENT
-      COMMON/SOURCE/ SO(NR,NK,5),SN(NR,NK,5),SOT(NR,NK)
-      COMMON/PROF/ ALT(NR),DANS(NR,NK)
-      COMMON/TRUMO/ ANG(NK),ZALT(NR)
-      COMMON/BITEM/ TEMP,AMU,DINF(5)
+c
+      INTEGER, PARAMETER :: NR=60,NK=19
+      INTEGER :: INF
+      REAL :: VO, VLON, VDEC, TDUR, AN
+      INTEGER :: L, K, ii
+      INTEGER :: IJKL, IJKLM, IDB, IDF
+      REAL :: BRANCH, XLA, PTF, AM, BOLK, PY, SPI
+      REAL :: XNUZ, E2, EMAS, C, DLDN, SIGMAN, SIGMAF, DELNUD
+      REAL :: ALPHE, CCC, GZERO, ALAMVENT
+      REAL :: A11, A12, A13, A21, A22, A23, A31, A32, A33
+      REAL :: aa, bb, cc, aa1, bb1, cc1
+      REAL :: x1, y1, z1, x2, y2, z2
+      REAL :: u2, v2, w2
+      REAL :: xot(5), xsn(5)
+c--------------------------------------------------------------------------
+      REAL :: RAVENT, DECVENT, SO(NR,NK,5), SN(NR,NK,5), SOT(NR,NK)
+      REAL :: ALT(NR), DANS(NR,NK)
+      REAL :: ANG(NK), ZALT(NR)
+      REAL :: TEMP, AMU, DINF(5)
+      REAL :: DPI, UA, GRAL, DTAP, DTAU, SIG
+      INTEGER :: LMAX, KMAX
+      COMMON/DIRVENT/ RAVENT,DECVENT
+      COMMON/SOURCE/ SO, SN, SOT
+      COMMON/PROF/ ALT, DANS
+      COMMON/TRUMO/ ANG, ZALT
+      COMMON/BITEM/ TEMP,AMU,DINF
       COMMON/TRAC/ DPI,UA,LMAX,KMAX,GRAL,DTAP,DTAU,SIG
 c--------------------------------------------------------------------------
 c      DIMENSION VPOS(12)
@@ -51,7 +76,6 @@ c      DATA VPOS/1993.,-18.67,32.03,-12.18,1998.,-26.05,39.44,
 c     &     -25.71,2003.,-33.07,46.42,-38.79/
 c     DATA VPOS/1993.,6.31,45.19,22.42,1998.,4.62,
 c     &  61.49,31.16,2003.,2.97,77.25,39.61/  
-      DIMENSION xot(5),xsn(5)
       integer unit
       REAL*4 DONNE(12)
 c--------------------------------------------------------------------------
@@ -63,7 +87,7 @@ C     IJKL = 2 DONNEES LYMAN-BETA
 C     IJKL = 3 DONNEES HELIUM
 
 c.... LECTURE DES MODELES ................................................
-      OPEN(UNIT=3,FILE='./required_procedures/fsm99td12v20t80', 
+      OPEN(UNIT=3,FILE="./required_procedures/fsm99td12v20t80", 
      1     FORM='FORMATTED',STATUS='OLD')
       READ(3,*) KMAX,LMAX,INF
       READ(3,*) VO,VLON,VDEC,TEMP,AMU,TDUR,AN,DINF(1)
@@ -201,7 +225,7 @@ c     affiche coordonnees ecliptiques et equatoriales du vent.
       cc1=sin(23.45*dpi)*bb+cos(23.45*dpi)*cc
       ravent=atan2(bb1,aa1)/dpi
       if (ravent.lt.0.) ravent=ravent+360.
-      dcvent=asin(cc1)/dpi
+      decvent=asin(cc1)/dpi
 c      print *,'Upwind ecliptic : ',ALAMVENT/dpi,DECVENT/dpi
 c      print *,'Upwind equatorial : ',ravent,dcvent
 c     
@@ -276,6 +300,12 @@ c     close(16)
       END
 c+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       FUNCTION G(TO)
+
+      IMPLICIT NONE
+      REAL :: TO, DEPI, DX, G, X, XU, U, VV, DG
+      REAL :: GN, DGN, Q
+      INTEGER :: KG
+
 c     
       IF (TO.LT.0.) GO TO 29
       IF (TO.LE.2.) GO TO 25
@@ -307,7 +337,12 @@ c
       END
 c//////////////////////////////////////////////////////////////////////////
       FUNCTION T(TO)
-c     
+
+      IMPLICIT NONE
+      REAL :: TO, DEPI, DX, T, X, XU, U, UU, DT, DTN, TN, Q
+      INTEGER :: KT
+
+
       IF (TO.LT.0.) GO TO 28
       IF (TO.LE.2.) GO TO 24
       DEPI=2./SQRT(3.14159265358)
@@ -337,16 +372,31 @@ c
  31   RETURN
       END
 c**************************************************************************
-      FUNCTION TOP(XF,YF,ZF,XH,YH,ZH,imd)
-c     
+      REAL FUNCTION TOP(XF,YF,ZF,XH,YH,ZH,imd)
+
+      IMPLICIT NONE
+      REAL, INTENT(IN) :: XF, YF, ZF, XH, YH, ZH
+      INTEGER , INTENT(IN):: imd
+      REAL :: XA, XB, YA, YB, ZA, ZB
+      REAL :: ALTP, RA, RB, DUX, DUY, DUZ, DUR
+      REAL :: XAB, YAB, ZAB, TA, DN, DN1
+      REAL :: DMA, DSAB, DSA0, SAB, DT
+      INTEGER :: KP
+      
 C     CALCUL DE L'EPAISSEUR OPTIQUE ENTRE DEUX POINTS
-      PARAMETER (NR=60,NK=19)
+      INTEGER, PARAMETER :: NR=60, NK=19
       REAL*4 NORME
 c--------------------------------------------------------------------------
-      COMMON/SOURCE/ SO(NR,NK,5),SN(NR,NK,5),SOT(NR,NK)
-      COMMON/PROF/ ALT(NR),DANS(NR,NK)
-      COMMON/TRUMO/ ANG(NK),ZALT(NR)
-      COMMON/BITEM/ TEMP,AMU,DINF(5)
+      REAL :: SO(NR,NK,5), SN(NR,NK,5), SOT(NR,NK)
+      REAL :: ALT(NR), DANS(NR,NK)
+      REAL :: ANG(NK), ZALT(NR)
+      REAL :: TEMP, AMU, DINF(5)
+      REAL :: DPI, UA, GRAL, DTAP, DTAU, SIG
+      INTEGER :: LMAX, KMAX
+      COMMON/SOURCE/ SO,SN,SOT
+      COMMON/PROF/ ALT,DANS
+      COMMON/TRUMO/ ANG,ZALT
+      COMMON/BITEM/ TEMP,AMU,DINF
       COMMON/TRAC/ DPI,UA,LMAX,KMAX,GRAL,DTAP,DTAU,SIG
 c--------------------------------------------------------------------------
       XA=XF/UA
@@ -389,7 +439,7 @@ c--------------------------------------------------------------------------
       DN1=DINF(imd)*DN1
       IF (KP.EQ.KMAX) KP=KP-1
       DMA=(ALT(KP+1)-ALT(KP))/3./UA
-      DSAB=DMIN1(DMA,DSA0)
+      DSAB=MIN(DMA,DSA0)
       SAB=0.
       DT=0.
  105  continue
@@ -406,29 +456,40 @@ c     WRITE(18,*) DN,DT,DSAB,SAB,RA,KP,SIG*UA,NORME
       DN1=DN
       IF (KP.EQ.KMAX) KP=KP-1
       DMA=(ALT(KP+1)-ALT(KP))/3./UA
-      DSAB=DMIN1(DMA,DSA0)
+      DSAB=MIN(DMA,DSA0)
       IF (SAB.LE.NORME) goto 105
       TOP=DT
 c     WRITE(18,*) TOP,DN,RA/UA,TA
-      RETURN
+      RETURN 
  50   TOP=0.
-      RETURN
+      RETURN 
       END
 c########################################################################
       SUBROUTINE DEN(Z,T,DAN,KO)
 C     CALCUL DE LA DENSITE EN UN POINT DE DISTANCE GEOCENTRIQUE Z ,T
-      PARAMETER (NR=60,NK=19)
+      IMPLICIT NONE
+      REAL :: Z, T, DAN
+      INTEGER, PARAMETER :: NR=60, NK=19
+      INTEGER :: KO, KK, J, LL, LLP, M, KKP
+      REAL :: DT, DU, FL, FLP
 c--------------------------------------------------------------------------
-      COMMON/SOURCE/ SO(NR,NK,5),SN(NR,NK,5),SOT(NR,NK)
-      COMMON/PROF/ ALT(NR),DANS(NR,NK)
-      COMMON/TRUMO/ ANG(NK),ZALT(NR)
-      COMMON/BITEM/ TEMP,AMU,DINF(5)
+      REAL :: SO(NR,NK,5), SN(NR,NK,5), SOT(NR,NK)
+      REAL :: ALT(NR), DANS(NR,NK)
+      REAL :: ANG(NK), ZALT(NR)
+      REAL :: TEMP, AMU, DINF(5)
+      REAL :: DPI, UA, GRAL, DTAP, DTAU, SIG
+      INTEGER :: LMAX, KMAX
+      COMMON/SOURCE/ SO,SN,SOT
+      COMMON/PROF/ ALT,DANS
+      COMMON/TRUMO/ ANG,ZALT
+      COMMON/BITEM/ TEMP,AMU,DINF
       COMMON/TRAC/ DPI,UA,LMAX,KMAX,GRAL,DTAP,DTAU,SIG
 c--------------------------------------------------------------------------
 
       KO = 1
       DAN=0.
       IF (Z.LT.ALT(1)) GO TO 12
+      IF (Z.GT.ALT(KMAX)) Z=ALT(KMAX)
       DO 20 J=1,LMAX
          IF (T-ANG(J)) 22,21,20
  21      LL=J
@@ -440,7 +501,6 @@ c--------------------------------------------------------------------------
          DT=(T-ANG(J-1))/(ANG(J)-ANG(J-1))
          GO TO 23
  20   CONTINUE
-      IF (Z.GT.ALT(KMAX)) Z=ALT(KMAX)
  23   DO 24 M=1,KMAX
          IF (Z-ZALT(M)) 26,25,24
  25      KK=M
@@ -472,15 +532,29 @@ C     U,V,W  DIRECTION DE VISEE .
 C     TT  EPAISSEUR OPTIQUE LE LONG DE LA LIGNE DE VISEE
 C     SO ET SN FONCTIONS SOURCE  PRIMAIRE ET APRES DIFFUSION MULTIPLE .
 c     
-      PARAMETER (NR=60,NK=19)
-      DIMENSION FOT(5),FLN(5),DN(5),TT(5),FOTE(5),FN(5),FOO(5)
+      IMPLICIT NONE
+      REAL :: X, Y, Z, U, V, W, FOT(5), FLN(5)
+      INTEGER :: idb, idf, KO, ii, IMYN
+      REAL :: DTT, DFOT, DP, DFLN, S, RR, DUA, YP, R, XAV, YAV, ZAV
+      REAL :: TETA, DNA, XP, ZP, RU
+      REAL :: cosff, corec, FFNN, DFLNC, TOP, T, TTTII
+
+      INTEGER, PARAMETER :: NR=60, NK=19
+      REAL :: DN(5),TT(5),FOTE(5),FN(5),FOO(5)
 c--------------------------------------------------------------------------
-      COMMON/SOURCE/ SO(NR,NK,5),SN(NR,NK,5),SOT(NR,NK)
-      COMMON/PROF/ ALT(NR),DANS(NR,NK)
-      COMMON/TRUMO/ ANG(NK),ZALT(NR)
-      COMMON/BITEM/ TEMP,AMU,DINF(5)
+      REAL :: SO(NR,NK,5), SN(NR,NK,5), SOT(NR,NK)
+      REAL :: ALT(NR), DANS(NR,NK)
+      REAL :: ANG(NK), ZALT(NR)
+      REAL :: TEMP, AMU, DINF(5)
+      REAL :: DPI, UA, GRAL, DTAP, DTAU, SIG
+      INTEGER :: LMAX, KMAX
+      COMMON/SOURCE/ SO,SN,SOT
+      COMMON/PROF/ ALT,DANS
+      COMMON/TRUMO/ ANG,ZALT
+      COMMON/BITEM/ TEMP,AMU,DINF
       COMMON/TRAC/ DPI,UA,LMAX,KMAX,GRAL,DTAP,DTAU,SIG
 c--------------------------------------------------------------------------
+
 c     l'axe du vent est l'axe -Oy
       KO=0
       DTT=0.
@@ -505,7 +579,9 @@ c     l'axe du vent est l'axe -Oy
       XAV=X
       YAV=Y
       ZAV=Z
+      IMYN=0
  52   TETA=ACOS(YP/R)/DPI
+      IMYN=IMYN+1
       CALL DEN(R,TETA,DNA,KO)
       do ii=idb,idf
          DN(ii)=DINF(ii)*DNA
@@ -519,8 +595,8 @@ c     l'axe du vent est l'axe -Oy
       ELSE
          DUA=(ALT(KMAX)-ALT(KMAX-1))/2.
       ENDIF
-      DP=DMIN1(DP,DUA)
-      DP=DMAX1(DP,UA/10.)
+      DP=MIN(DP,DUA)
+      DP=MAX(DP,UA/10.)
       S=S+DP
       XP=X+S*U
       YP=Y+S*V
@@ -531,7 +607,7 @@ c     l'axe du vent est l'axe -Oy
  55   TETA=ACOS(YP/R)/DPI
       CALL IPAL3M(R,TETA,FOTE,FOO,FN,idb,idf)
 C     EPAISSEUR OPTIQUE ELEMENTAIRE SUR LE PAS DP
-      DTT=TOP(XAV,YAV,ZAV,XP,YP,ZP,idb)
+      DTT = TOP(XAV,YAV,ZAV,XP,YP,ZP,idb)
       cosff=(u*xp+v*yp+w*zp)/r
       corec=0.25*cosff*cosff+(11./12.)
 c     corec=1.
@@ -565,13 +641,24 @@ C
 C     DT=ECART RELATIF A L'ANGLE D'INDICE LL
 C     DU=ECART RELATIF A L'ALTITUDE D'INDICE KK
 C     
-      PARAMETER (NR=60,NK=19)
+
+      IMPLICIT NONE
+      REAL :: R, T, CT(5), FOO(5), F(5)
+      INTEGER :: idb, idf
+      INTEGER, PARAMETER :: NR=60, NK=19
+      INTEGER :: ii, J, LL, LLP, M, KK, KKP, imd
+      REAL :: RZ, DT, DU, FL, FLP, COT
 c--------------------------------------------------------------------------
-      DIMENSION CT(5),F(5),FOO(5)
-      COMMON/SOURCE/ SO(NR,NK,5),SN(NR,NK,5),SOT(NR,NK)
-      COMMON/PROF/ ALT(NR),DANS(NR,NK)
-      COMMON/TRUMO/ ANG(NK),ZALT(NR)
-      COMMON/BITEM/ TEMP,AMU,DINF(5)
+      REAL :: SO(NR,NK,5), SN(NR,NK,5), SOT(NR,NK)
+      REAL :: ALT(NR), DANS(NR,NK)
+      REAL :: ANG(NK), ZALT(NR)
+      REAL :: TEMP, AMU, DINF(5)
+      REAL :: DPI, UA, GRAL, DTAP, DTAU, SIG
+      INTEGER :: LMAX, KMAX
+      COMMON/SOURCE/ SO,SN,SOT
+      COMMON/PROF/ ALT,DANS
+      COMMON/TRUMO/ ANG,ZALT
+      COMMON/BITEM/ TEMP,AMU,DINF
       COMMON/TRAC/ DPI,UA,LMAX,KMAX,GRAL,DTAP,DTAU,SIG
 c--------------------------------------------------------------------------
       do ii=1,5
