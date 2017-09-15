@@ -530,11 +530,13 @@ struct corona_simulator {
     double tIcalc = 0.0;
     VecDoub posvec(3,obsdata.pos[iobs]);
     VecDoub dirvec(3,obsdata.dir[iobs]);
-    tIcalc = LOS.integrate(thisS,
-			   thisatmointerp,
-			   posvec,
-			   dirvec,
-			   obsdata.lineintcoef);// photons/cm2/s
+    tIcalc = branch*LOS.integrate(thisS,
+				  thisatmointerp,
+				  posvec,
+				  dirvec,
+				  obsdata.lineintcoef);// photons/cm2/s
+    //branching ratio of emission is incorporated into LOS integration above.
+    
     //convert to rayleighs
     tIcalc /= 1e6;// megaphoton/cm2/s
     tIcalc *= 4*pi/1e3; // now we're in kR; see C&H pg. 280-282
