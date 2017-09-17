@@ -33,14 +33,15 @@ const double pi = 3.1415926535898;
 /*                                       // total cross section of Ly alpha pi*e^2/(m c) * f */
 /* const double sCO2 = 6.3e-20; //cm^2 CO2 cross section at Ly alpha */
 /* const double branch = 1.0; */
+/* const double lambda = 121.6e-7; */
 /* Lyman beta numbers  */
 const double sHtot = 2.647e-2 * 7.9142e-2;// cm^2 Hz,
                                       // total cross section of Ly alpha pi*e^2/(m c) * f
 const double sCO2 = 3.53e-17; //cm^2 CO2 cross section at Ly beta
 const double branch = 0.8819; //branching ratio, computed from relative strength of 3p-1s/(3p-1s + 3p-2s)
+const double lambda = 102.6e-7;
 
-
-
+const double sHcentercoef = sHtot/std::sqrt(2.0*pi*kB/mH)*lambda;
 
 //parallel processing definitions:
 const int master = 0; // rank of the master process; needed in both main() and interpgen.h
@@ -141,7 +142,7 @@ const string losproffname=tabdataloc+"H_LOS_prof.dat";//SRCFNSLOC is
 						      //compile-time
 
 //define the location to search for and store generated source functions
-const string srcfnsloc="/scratch/summit/chaffin/source_functions_lyman_beta/";
+const string srcfnsloc="/home/mike/Documents/Mars/lyman_beta_source_functions/";
   
 //______________________________________________________
 //----------------END CONTROL PARAMETERS----------------

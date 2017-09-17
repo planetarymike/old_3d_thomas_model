@@ -20,7 +20,11 @@ using std::exp;
 using std::pow;
 
 
-inline double sH(const double &T) { return 5.96e-12/sqrt(T); } //effective H cross section at Ly alpha line center
+inline double sH(const double &T) { 
+  std::cout << "sHcentercoef = " << sHcentercoef << std::endl;
+  std::cin.get();
+  return sHcentercoef/sqrt(T); 
+} //effective H cross section at Ly alpha line center
 
 inline double dtau_H(const double &r, atmointerp &thisatmointerp) {
   double temp = sH(Temp(r,thisatmointerp.Texo))*thisatmointerp.nH(r);
