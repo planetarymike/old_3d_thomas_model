@@ -21,8 +21,8 @@ using std::pow;
 
 
 inline double sH(const double &T) { 
-  std::cout << "sHcentercoef = " << sHcentercoef << std::endl;
-  std::cin.get();
+  /* std::cout << "sHcentercoef = " << sHcentercoef << std::endl; */
+  /* std::cin.get(); */
   return sHcentercoef/sqrt(T); 
 } //effective H cross section at Ly alpha line center
 
