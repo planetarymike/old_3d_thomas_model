@@ -132,7 +132,7 @@ const string losproffname=tabdataloc+"H_LOS_prof.dat";//SRCFNSLOC is
 						      //compile-time
 
 //define the location to search for and store generated source functions
-const string srcfnsloc="/scratch/summit/chaffin/source_functions/";
+const string srcfnsloc="./source_functions/";
   
 //______________________________________________________
 //----------------END CONTROL PARAMETERS----------------
