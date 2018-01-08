@@ -132,7 +132,11 @@ const string losproffname=tabdataloc+"H_LOS_prof.dat";//SRCFNSLOC is
 						      //compile-time
 
 //define the location to search for and store generated source functions
+<<<<<<< HEAD
 const string srcfnsloc="/projects/chaffin/coronal_scan_analysis_Sep2016/corona_sim/source_functions_235100/";
+=======
+const string srcfnsloc="./source_functions/";
+>>>>>>> e4b6c462eb29e03083a4f0efea26d35aaf6fb16c
   
 //______________________________________________________
 //----------------END CONTROL PARAMETERS----------------
