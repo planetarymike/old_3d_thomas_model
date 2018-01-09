@@ -21,7 +21,9 @@ const int nphyspts = 10000;//> 366!! or segfault!
 const double G = 6.67e-8;// dyn cm^2 gm^-2, Cavendish constant
 const double kB = 1.38e-16;// erg K^-1, Boltzmann constant
 const double clight = 3e10;// cm s^-1, speed of light
-const double mH = 1.673e-24;// gm, mass of hydrogen atom
+
+//deuterium mass = 2x hydrogen mass
+const double mH = 2*1.673e-24;// gm, mass of deuterium atom
 const double mCO2 = 44 * mH;// gm, mass of CO2 molecule
 
 //mathematical constants
