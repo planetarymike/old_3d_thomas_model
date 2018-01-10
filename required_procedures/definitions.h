@@ -108,8 +108,8 @@ const double     nHlogf = 20000000;//getting really hacky here to
 const double     nHf = (nHgridextend) ? 1e6*(n_nHgridextend+1) : nHlogf;
 const bool nHgridlog = TRUE;
 
-const int         nT=196;
-const double      Ti=50;
+const int         nT=191;
+const double      Ti=100;
 const double      Tf=2000;
 const bool  Tgridlog=FALSE;
 
@@ -132,11 +132,9 @@ const string losproffname=tabdataloc+"H_LOS_prof.dat";//SRCFNSLOC is
 						      //compile-time
 
 //define the location to search for and store generated source functions
-<<<<<<< HEAD
-const string srcfnsloc="/projects/chaffin/coronal_scan_analysis_Sep2016/corona_sim/source_functions_235100/";
-=======
-const string srcfnsloc="./source_functions/";
->>>>>>> e4b6c462eb29e03083a4f0efea26d35aaf6fb16c
+const string srcfnsloc="/scratch/summit/chaffin/source_functions_lowT/";
+//const string srcfnsloc="/projects/chaffin/coronal_scan_analysis_Sep2016/corona_sim/source_functions_235100/";
+//const string srcfnsloc="./source_functions/";
   
 //______________________________________________________
 //----------------END CONTROL PARAMETERS----------------
