@@ -424,7 +424,8 @@ void generate_S(const double nexo,
   MatDoub preinv(nrows,ncols);
   for (row = 0; row < nrows; row++)
     for (col = 0; col < ncols/*square*/; col++) 
-      preinv[row][col] = row==col ? 1.0-kvals[row][col] : -kvals[row][col];
+      preinv[row][col] = row==col ? 1.0-branch*kvals[row][col] : -branch*kvals[row][col];
+  //branching ratio is incorporated in the above step
 
   VecDoub ynrvec(nrows,yvec);
   LUdcmp mat(preinv);
