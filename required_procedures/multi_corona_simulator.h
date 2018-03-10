@@ -289,7 +289,7 @@ struct corona_observation {
       obsinit=TRUE;
 
     } else {//obsfile not found!
-      std::cout << "Observation file " << obsfile << " not found!\n" 
+      std::cout << "Observation file " << obsname << " not found!\n" 
 		<< "Check that file path is correct.\n";
       throw("obsfile not found!");
     }
