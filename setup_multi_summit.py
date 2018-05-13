@@ -7,7 +7,7 @@ import numpy
 cc="icpc"
 fc="ifort"
 python_h_location=get_python_inc()
-idir="-I./required_procedures/ -I/curc/tools/x86_64/rh6/software/gsl/1.16/intel/15.0.2/include/ -L/curc/tools/x86_64/rh6/software/gsl/1.16/intel/15.0.2/lib/ -L/curc/tools/x86_64/rh6/software/intel/15.0.2/lib/intel64/ -I/curc/tools/x86_64/rh6/software/intel/15.0.2/include/ -I/curc/tools/x86_64/rh6/software/intel/python/2.7.10/include/python2.7/ "
+idir="-I./required_procedures/ -I" + os.environ['CURC_GSL_ROOT'] +"/include/ -L" + os.environ['CURC_GSL_ROOT'] +"/lib/ -L" + os.environ['CURC_INTEL_ROOT'] +"/intel64/ -I" + os.environ['CURC_GSL_ROOT'] +"/include/ -I" + os.environ['CURC_PYTHON_ROOT'] +"/include/python2.7/ "
 cflags=" -lgsl -lgslcblas -lm -lfor -fPIC -lstdc++ -g -traceback"
 fflags=" -lstdc++ -fPIC -nofor-main -lgsl -lgslcblas -lm -g -traceback -f77rtl -check"
 
@@ -26,14 +26,13 @@ setup(ext_modules = cythonize(Extension(
     language="c++",               # generate C++ code
     extra_compile_args=["-O3","-fPIC","-g","-traceback"],
     extra_link_args=["-lifcore","-lstdc++","-lgsl","-lgslcblas","-lm"],
-    library_dirs=["/curc/tools/x86_64/rh6/software/gsl/1.16/intel/15.0.2/lib/",
-                  "/curc/tools/x86_64/rh6/software/intel/15.0.2/lib/intel64/",
-                  "/curc/tools/x86_64/rh6/software/gsl/1.16/intel/15.0.2/lib/"],
+    library_dirs=[os.environ['CURC_INTEL_ROOT'] +"/intel64/",
+                  os.environ['CURC_GSL_ROOT'] +"/lib"],
     include_dirs=["./required_procedures/",
                   numpy.get_include(),
-                  "/curc/tools/x86_64/rh6/software/gsl/1.16/gcc/5.1.0/include",
-                  "/curc/tools/x86_64/rh6/software/intel/15.0.2/include/",
-                  "./gcc-4.8.5/libstdc++-v3/include/std/"],#pointer to
+                  os.environ['CURC_GSL_ROOT'] +"/include",
+                  os.environ['CURC_GSL_ROOT'] +"/include"],
+#                  "./gcc-4.8.5/libstdc++-v3/include/std/"],#pointer to
                                                            #a manually
                                                            #installed
                                                            #version of
