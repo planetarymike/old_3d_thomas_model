@@ -179,7 +179,7 @@ double qtrap(T &func, const double a, const double b, const double EPS=1.0e-10)
 	if (abs(s-olds) < EPS*abs(olds) || (s == 0.0 && olds == 0.0)) return s;
       olds = s;
     }
-  throw("Too many steps in routine qtrap");
+  toss("Too many steps in routine qtrap");
 };
 
 //simpson's rule from trapezoidal rule:
@@ -199,7 +199,7 @@ double qsimp(T &func, const double a, const double b, const double EPS = 1.0e-10
       os = s;
       ost = st;      
     }
-  throw("too many steps in routine qsimp");
+  toss("too many steps in routine qsimp");
 }
 
 
@@ -263,7 +263,7 @@ double qsimpinf(T &func, const double EPS = 1.0e-10)
       os = s;
       ost = st;      
     }
-  throw("too many steps in routine qsimpinf");
+  toss("too many steps in routine qsimpinf");
 }
 
 
@@ -358,7 +358,7 @@ double qlinetrap(Tfunc &func, Tline &linefunc, const double a, const double b, c
       //      std::cout << "s = " << s << std::endl;
       
     }
-  throw("Too many steps in routine qtrap");
+  toss("Too many steps in routine qtrap");
 };
 
 template<class Tfunc>
@@ -452,7 +452,7 @@ double qlinetrap_2pt(Tfunc &func, const VecDoub r0, VecDoub r1, const double EPS
       //      std::cout << "s = " << s << std::endl;
       
     }
-  throw("Too many steps in routine qtrap");
+  toss("Too many steps in routine qtrap");
 };
 
  
@@ -530,7 +530,7 @@ double qlinetrap_2pt(Tfunc &func, const VecDoub r0, VecDoub r1, const double EPS
 /* 	if (abs(s-olds) < EPS*abs(olds) || (s == 0.0 && olds == 0.0)) return s; */
 /*       olds = s; */
 /*     } */
-/*   throw("Too many steps in routine qtrap"); */
+/*   toss("Too many steps in routine qtrap"); */
 /* }; */
 
 

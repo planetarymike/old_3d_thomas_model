@@ -15,7 +15,7 @@ double zbrent(T &func, const double x1, const double x2, const double tol)
   const double EPS=numeric_limits<Doub>::epsilon(); // machine precision
   double a=x1, b=x2, c=x2, d, e, fa=func(a), fb=func(b), fc, p, q, r, s, tol1, xm;
   if  ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb <0.0))
-    throw("Root must be bracketed in zbrent");
+    toss("Root must be bracketed in zbrent");
   fc = fb;
   for (int iter = 0; iter < itmax; iter++) {
     if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
@@ -70,5 +70,5 @@ double zbrent(T &func, const double x1, const double x2, const double tol)
       b += SIGN(tol1,xm);
     fb = func(b);
   }
-  throw("Maximum number of iterations exceed in zbrent");
+  toss("Maximum number of iterations exceed in zbrent");
 }

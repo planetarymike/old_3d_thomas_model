@@ -48,7 +48,7 @@ void gaussj(MatDoub_IO &a, MatDoub_IO &b)
     //we may now divide the pivot row by the pivot element, located at [irow][icol]
     indxr[i]=irow;
     indxc[i]=icol;
-    if (a[icol][icol] == 0.0) throw("gaussj:: SINGULAR MATRIX");
+    if (a[icol][icol] == 0.0) toss("gaussj:: SINGULAR MATRIX");
     pivinv=1.0/a[icol][icol];
     a[icol][icol] = 1.0;
     for (l = 0; l < n; l++) a[icol][l] *= pivinv;

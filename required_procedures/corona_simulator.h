@@ -242,7 +242,7 @@ struct corona_simulator {
     } else {//obsfile not found!
       std::cout << "Observation file " << obsfile << " not found!\n" 
 		<< "Check that file path is correct.\n";
-      throw("obsfile not found!");
+      toss("obsfile not found!");
     }
   }
 
@@ -304,7 +304,7 @@ struct corona_simulator {
       std::cout << "thisSinit = " << thisSinit << std::endl;
       std::cout << "obsinit = " << obsinit << std::endl;
       
-      throw("Load observation and source function before calling simulate()!");
+      toss("Load observation and source function before calling simulate()!");
     }
     //simulate intensity for a single observation using the current
     //Sobj and the specicified IPH background.
@@ -358,7 +358,7 @@ struct corona_simulator {
       std::cout << "thisSinit = " << thisSinit << std::endl;
       std::cout << "obsinit = " << obsinit << std::endl;
       
-      throw("Load observation and source function before calling simulate()!");
+      toss("Load observation and source function before calling simulate()!");
     }
 
     thisI_calc.resize(nobs);

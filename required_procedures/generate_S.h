@@ -238,7 +238,7 @@ void generate_S(const double nexo,
 	      if (iter == maxit) {
 		std::cout << "On row " << row
 			  << " iter > maxit!" << std::endl;
-		throw("Max iterations exceeded!")
+		toss("Max iterations exceeded!")
 	      }
 
 	      //get the starting box coordinates
@@ -314,7 +314,7 @@ void generate_S(const double nexo,
 		}
 		if (tauH>taumax) {
 		  std::cout << "tauH = " << tauH << std::endl;
-		  throw("maximum optical depth exceeded!");
+		  toss("maximum optical depth exceeded!");
 		}
 
 
@@ -408,7 +408,7 @@ void generate_S(const double nexo,
       dtau_H_int dtauH(thisatmointerp);
       tauHcol = qlinetrap_2pt(dtauH, r1_vec, r2_vec, 1e-3);
       if (tauHcol>taumax)
-	throw("maximum optical depth exceeded!\n")
+	toss("maximum optical depth exceeded!\n")
       std::cout << "  ... H optical depth = "<< tauHcol << ".\n";
 
       // put them together into the y-vec

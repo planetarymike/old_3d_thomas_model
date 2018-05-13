@@ -114,7 +114,7 @@ int Base_interp::locate(const double x)
   //  std::cout << "n = " << n << ", mmm = " << mmm << "\n";
   if (n < 2 || mmm < 2 || mmm > n) {
     //    std::cout << "n = " << n << ", mmm = " << mmm << std::endl;
-    throw("locate size error");
+    toss("locate size error");
   }
 
   bool ascnd = (xx[n-1] >= xx[0]); // true if ascending order of
@@ -146,7 +146,7 @@ int Base_interp::hunt(const double x)
   //  std::cout << "n = " << n << ", mmm = " << mmm << std::endl;
   if (n < 2 || mmm < 2 || mmm > n) {
     std::cout << "n = " << n << ", mmm = " << mmm << std::endl;
-    throw("hunt size error");
+    toss("hunt size error");
   }
   bool ascnd = (xx[n-1] >= xx[0]); // does table ascend?
   if (jl < 0 || jl > n-1) { // input guess not useful. go directly to
@@ -241,7 +241,7 @@ double Poly_interp::rawinterp(int jl, double x)
       ho = xa[i]-x;
       hp = xa[i+m]-x;
       w = c[i+1]-d[i];
-      if ((den=ho-hp) == 0.0) throw("Poly_interp error");
+      if ((den=ho-hp) == 0.0) toss("Poly_interp error");
       den = w/den;
       d[i] = hp*den;
       c[i] = ho*den;
@@ -291,7 +291,7 @@ double Poly_interp::rawinterp(int jl, double x)
 /* 	ho = xa[i]-x; */
 /* 	hp = xa[i+m]-x; */
 /* 	w = c[i+1]-d[i]; */
-/* 	if ((den=ho-hp) == 0.0) throw("Poly_interp error"); */
+/* 	if ((den=ho-hp) == 0.0) toss("Poly_interp error"); */
 /* 	den = w/den; */
 /* 	d[i] = hp*den; */
 /* 	c[i] = ho*den; */

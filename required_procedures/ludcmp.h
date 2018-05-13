@@ -40,7 +40,7 @@ LUdcmp::LUdcmp(MatDoub_I &a) : n(a.nrows()), lu(a), indx(n), aref(a) {
     big = 0.0;
     for (j = 0; j < n; j++)
       if ( (temp = abs(lu[i][j])) > big ) big = temp;
-    if (big == 0.0) throw("Singular Matrix in LUdcmp"); // No nonzero
+    if (big == 0.0) toss("Singular Matrix in LUdcmp"); // No nonzero
 							// largest
 							// element
     vv[i] = 1.0/big; // save the scaling
@@ -87,7 +87,7 @@ void LUdcmp::solve(VecDoub_I &b, VecDoub_O &x)
   int i, ii = 0, ip, j;
   double sum;
   if (b.size() != n || x.size() != n)
-    throw("LUdcmp::solve bad sizes");
+    toss("LUdcmp::solve bad sizes");
   for (i = 0; i < n; i++) x[i] = b[i];
   for (i = 0; i < n; i++) {
     // When ii is set to a positive value, it will become the index of
@@ -117,7 +117,7 @@ void LUdcmp::solve(MatDoub_I &b, MatDoub_O &x)
 {
   int i, j, m = b.ncols();
   if (b.nrows() != n || x.nrows() != n || b.ncols() != x.ncols())
-    throw("LUdcmp::solve bad sizes");
+    toss("LUdcmp::solve bad sizes");
   VecDoub xx(n);
   for (j = 0; j < m; j++) { // copy and solve each column in turn
     for (i = 0; i < n; i++) xx[i] = b[i][j];

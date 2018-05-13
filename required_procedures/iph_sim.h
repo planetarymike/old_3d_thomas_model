@@ -270,7 +270,7 @@ struct LOSprofinterp {
        optical depth drops below threshold. */
 
     if (!init)
-      throw("LOS prof interp not initialized!");
+      toss("LOS prof interp not initialized!");
 
     double tlbfrac = tlb/tlc;
 
@@ -566,7 +566,7 @@ struct IPHsim {
 
   double sim(double IPH_brightness, double nexo, double Texo, int iobs) {
     if (!init)
-      throw("IPH simulator must be initialized with observation data!");
+      toss("IPH simulator must be initialized with observation data!");
     // std::cout << "For iobs = " << iobs << std::endl;
     // std::cout << " IPH_brightness = " << IPH_brightness << std::endl;
     // std::cout << " nexo = " << nexo << std::endl;

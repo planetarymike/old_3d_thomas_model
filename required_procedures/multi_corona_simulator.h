@@ -14,10 +14,11 @@
 #include "nr3.h" // type VecDoub
 #include "los.h"       //line of sight integration routines
 #include "rad_trans.h" // two-point column density, holstein t and g functions
-#include "iph_sim.h" 
-#include "generate_S.h"
-#include "iph_model_interface.h"
+//#include "iph_sim.h" 
+//#include "iph_model_interface.h"
 #include "bicubic.h"
+#include "generate_S_gpu.h"
+//#include "generate_S.h"
 
 struct corona_observation {
 
@@ -261,7 +262,8 @@ struct corona_observation {
 	  /* 	    << "Fsun_earth = " << Fsun_quemerais << " photons/s/cm2/Angstrom\n" */
 	  /* 	    << "ra  [" << row << "] = " << ra[row] << "\n" */
 	  /* 	    << "dec [" << row << "] = " << dec[row] << "\n"; */
-	  IPHb_model[row] = quemerais_iph_model(Fsun_quemerais, marspos, ra[row], dec[row]);
+	  toss("np iph background model loaded!")
+	  //	  IPHb_model[row] = quemerais_iph_model(Fsun_quemerais, marspos, ra[row], dec[row]);
 	  /* std::cout << " Brightness = " << IPHb_model[row] << std::endl; */
 	} else {
 	  //assume IPH is uniform across all observations in this file
@@ -291,7 +293,7 @@ struct corona_observation {
     } else {//obsfile not found!
       std::cout << "Observation file " << obsname << " not found!\n" 
 		<< "Check that file path is correct.\n";
-      throw("obsfile not found!");
+      toss("obsfile not found!");
     }
   }
   
@@ -308,7 +310,7 @@ struct corona_simulator {
   corona_observation* allobsdata;
 
   //  IPHsim IPH; //IPH simulator
-  LOSprofinterp LOS_extinction;
+  //  LOSprofinterp LOS_extinction;
 
   //for a single number density and temperature, a single S, atmointerp, Icalc
   Sobj current_S; // current Sobj
@@ -390,7 +392,7 @@ struct corona_simulator {
 	Sinit_grid[inH][iT]=FALSE;
     }
 
-    LOS_extinction=LOSprofinterp(losproffname);
+    //LOS_extinction=LOSprofinterp(losproffname);
   };
 
   ~corona_simulator() {
@@ -491,13 +493,13 @@ struct corona_simulator {
 
     double ttransfrac;
     if (obsdata.alttan[iobs]>120) {
-      ttransfrac = 1.0-LOS_extinction.iph_absorbed_radec_scvec(obsdata.ra[iobs],
-							       obsdata.dec[iobs],
-							       obsdata.scvel[iobs],
-							       nH,
-							       T,
-							       obsdata.pos[iobs],
-							       obsdata.dir[iobs]);
+      ttransfrac = 1.0;//-LOS_extinction.iph_absorbed_radec_scvec(obsdata.ra[iobs],
+                       //				       obsdata.dec[iobs],
+                       //					       obsdata.scvel[iobs],
+                       //					       nH,
+                       //					       T,
+                       //					       obsdata.pos[iobs],
+                       //					       obsdata.dir[iobs]);
     } else {
       ttransfrac = 0.0;
     }
@@ -515,7 +517,7 @@ struct corona_simulator {
       std::cout << "thisSinit = " << thisSinit << std::endl;
       std::cout << "nobsdata = " << nobsdata << std::endl;
       
-      throw("Load observation and source function before calling simulate()!");
+      toss("Load observation and source function before calling simulate()!");
     }
     //simulate intensity for a single observation using the current
     //obsdata, Sobj and the specified IPH background.
@@ -530,17 +532,21 @@ struct corona_simulator {
     double tIcalc = 0.0;
     VecDoub posvec(3,obsdata.pos[iobs]);
     VecDoub dirvec(3,obsdata.dir[iobs]);
+    double tauHout;
+    double tauCO2out;
     tIcalc = LOS.integrate(thisS,
 			   thisatmointerp,
 			   posvec,
 			   dirvec,
-			   obsdata.lineintcoef);// photons/cm2/s
+			   obsdata.lineintcoef,
+			   tauHout,
+			   tauCO2out);// photons/cm2/s
     //convert to rayleighs
     tIcalc /= 1e6;// megaphoton/cm2/s
     tIcalc *= 4*pi/1e3; // now we're in kR; see C&H pg. 280-282
 
     //now add in the IPH
-    tIcalc += IPHb*obsdata.IPHb_model[iobs]*simulate_IPH_transmission(obsdata,iobs, nH, T);
+    tIcalc += IPHb*obsdata.IPHb_model[iobs]*exp(-tauCO2out);//*simulate_IPH_transmission(obsdata,iobs, nH, T);
 
     return tIcalc;
       
@@ -562,7 +568,7 @@ struct corona_simulator {
       std::cout << "thisSinit = " << thisSinit << std::endl;
       std::cout << "nobsdata = " << nobsdata << std::endl;
       
-      throw("Load observation and source function before calling simulate()!");
+      toss("Load observation and source function before calling simulate()!");
     }
 
     thisI_calc.resize(obsdata.nobs);
@@ -582,7 +588,7 @@ struct corona_simulator {
       std::cout << "thisSinit = " << thisSinit << std::endl;
       std::cout << "nobsdata = " << nobsdata << std::endl;
       
-      throw("Load observation and source function before calling simulate()!");
+      toss("Load observation and source function before calling simulate()!");
     }
 
     for (int idata=0; idata<nobsdata; idata++)
@@ -807,7 +813,7 @@ struct corona_simulator {
       }	else if (interpstyle=="bilinear") {
 	obsdata.current_I_calc[iobs]=interp_iobs_bilinear(obsdata, iobs, nHp, Tp, IPHb);
       } else {
-	throw("unknown interp style!");
+	toss("unknown interp style!");
       }
     }
   }
@@ -823,7 +829,7 @@ struct corona_simulator {
       } else if (interpstyle=="bilinear") {
 	allobsdata[idata].current_I_calc[iobs]=interp_iobs_bilinear(allobsdata[idata], iobs, nHp, Tp, IPHb);
       } else {
-	throw("unknown interp style!");
+	toss("unknown interp style!");
       }
     }
   }

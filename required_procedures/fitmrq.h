@@ -138,7 +138,7 @@ struct Fitmrq {
 	chisq = ochisq;
       }
     }
-    throw("Fitmrq:: too many iterations");
+    toss("Fitmrq:: too many iterations");
   }
 
   void mrqcof(VecDoub_I &a, MatDoub_O &alpha, VecDoub_O &beta) {

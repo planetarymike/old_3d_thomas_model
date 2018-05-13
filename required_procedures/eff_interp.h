@@ -12,7 +12,7 @@
 
 struct eff_interp
 {
-  /* Structure to load tabular Holstein functions */
+  /* Structure to load effusion velocity interpolation functions */
   string efffilename;
   bool silent;
   int npts;
@@ -51,7 +51,7 @@ struct eff_interp
 
   double interp(const double eff) {
     if (eff > effmax || eff < effmin)
-      throw("eff out of range!");
+      toss("eff out of range!");
     return effinterp.interp(eff);
   }
 };

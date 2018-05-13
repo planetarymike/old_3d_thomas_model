@@ -20,7 +20,7 @@ using std::exp;
 using std::pow;
 
 
-inline double sH(const double &T) { return 5.96e-12/sqrt(T); } //effective H cross section at Ly alpha line center
+inline double sH(const double &T) {   return sHcentercoef/sqrt(T); } //effective H cross section at Ly alpha line center
 
 inline double dtau_H(const double &r, atmointerp &thisatmointerp) {
   double temp = sH(Temp(r,thisatmointerp.Texo))*thisatmointerp.nH(r);
@@ -140,11 +140,17 @@ struct HolTaux
   }
 };
 
-double HolT(const double tau)
-{
+
+double HolT(const double tau) {
   HolTaux Tt(tau);
   return qsimpinf(Tt)/sqrt(pi);
 }
+
+
+double HolTint(const double tau) {
+  return qsimp(HolT, 0.0, tau);
+}
+
 
 /* template <class T> */
 /* double col_int_rsym(T &func, VecDoub &r1, VecDoub &r2) */
@@ -307,7 +313,7 @@ void getraypts(VecDoub &thetapts, VecDoub &thetawts,
     thetawts[thetapts.size()-1]/=2;
   } else {
   std::cout << "raymothod \"" << raymethod << "\" not supported!\n"; 
-  throw("raymethod not supported.");
+  toss("raymethod not supported.");
  }
 
  if (printout) {
@@ -322,9 +328,10 @@ void getraypts(VecDoub &thetapts, VecDoub &thetawts,
    //   std::cin.get();
  }
  
- //for phi, trapezoidal quadrature
+ //for phi, trapezoidal quadrature, offset by half a bin width to
+ //prevent intersections with the voxel gris symmetry axis
  for (int i = 0; i < phipts.size(); i++) {
-   phipts[i] = i*2.0*pi/phipts.size();
+   phipts[i] = (i+0.5)*2.0*pi/phipts.size();
    phiwts[i] = 2.0*pi/phipts.size();
  }
  
@@ -365,7 +372,7 @@ void logpts(VecDoub &rpts, VecDoub &rwts, const bool printout, atmointerp &thisa
   //now get the rpoints:
   for (int i = 0; i < nrpts; i++) {
     rpts[i]=exp(logmax-(i)*logspace)+rMars;
-    std::cout << "rpts["<<i<<"] = "<<(rpts[i]-rMars)/1e5<<"\n";
+    //std::cout << "rpts["<<i<<"] = "<<(rpts[i]-rMars)/1e5<<"\n";
   }
   
   //if we've got the points, we can compute the coefficients, assuming
@@ -439,14 +446,14 @@ void loglinpts(VecDoub &rpts, VecDoub &rwts, const bool printout,atmointerp &thi
   //now get the rpoints:
   for (int i = 0; i < nrpts-nbelowrexo; i++) {
     rpts[i]=exp(logmax-(i)*logspace)+rMars;
-    std::cout << "rpts["<<i<<"] = "<<(rpts[i]-rMars)/1e5<<"\n";
+    //    std::cout << "rpts["<<i<<"] = "<<(rpts[i]-rMars)/1e5<<"\n";
   }
 
   //space linearly below the exobase
   double linspace = (rexo-rminatm)/((double) nbelowrexo-1);
   for (int i = nrpts-nbelowrexo; i<nrpts; i++) {
     rpts[i]=rexo-(i-(nrpts-nbelowrexo))*linspace;
-    std::cout << "rpts["<<i<<"] = "<<(rpts[i]-rMars)/1e5<<"\n";
+    //    std::cout << "rpts["<<i<<"] = "<<(rpts[i]-rMars)/1e5<<"\n";
   }
 
   //if we've got the points, we can compute the coefficients, assuming
@@ -560,7 +567,7 @@ void taufracpts(VecDoub &rpts, VecDoub &rwts, const bool printout,atmointerp &th
     ttau -= taustep;
     taufind thistau(ttau, &myauxtau, &dtauCO2);
     rpts[i] = zbrent(thistau,rminatm,rpts[i-1],1e-4);
-    std::cout << "rpts[" << i << "] = " << (rpts[i]-rMars)/1e5 << std::endl;
+    //    std::cout << "rpts[" << i << "] = " << (rpts[i]-rMars)/1e5 << std::endl;
   }
 
   //if we've got the points, we can compute the coefficients, assuming
@@ -617,7 +624,7 @@ void doubletermtpts(VecDoub &thetapts,
   int ntpts=thetapts.size();
   std::cout << "ntpts = " << ntpts << std::endl;
   if (ntpts<5||(ntpts-5)%4!=0) { 
-    throw("for method doubletermpts, nthetapoints must be of the form 4N+5 for N>=0.");
+    toss("for method doubletermpts, nthetapoints must be of the form 4N+5 for N>=0.");
   }
   thetapts[0]=0;
   thetapts[(ntpts-1)/2]=pi/2.;
@@ -676,7 +683,7 @@ void getquadpts(VecDoub &rpts, VecDoub &rwts,
     loglinpts(rpts,rwts,printout,thisatmointerp);
   } else {
     string msg="No method "+rmethod+" in getquadpts!";
-    throw(msg.c_str());
+    toss(msg.c_str());
   }
   
   if (tmethod=="doubleterm") {
@@ -691,7 +698,7 @@ void getquadpts(VecDoub &rpts, VecDoub &rwts,
     thetawts[thetapts.size()-1] /= 2.0;
   } else {
     string msg="No method "+tmethod+" in getquadpts!";
-    throw(msg.c_str());
+    toss(msg.c_str());
   }
 
   //  double tot = 0.0;
@@ -721,5 +728,8 @@ void getquadpts(VecDoub &rpts, VecDoub &rwts,
   
 }
 
-  
+
+
+
+
 #endif

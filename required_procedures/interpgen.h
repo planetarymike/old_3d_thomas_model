@@ -132,7 +132,7 @@ struct atmointerp {
   }
   double nH(const double &r) {
     if (!init)
-      throw("atmointerp not initialized!");
+      toss("atmointerp not initialized!");
     km = (r - rMars)/1e5;
     return exp(lognHinterp.interp(log(km)));
     /* if (km < 120.) { */
@@ -159,7 +159,7 @@ struct atmointerp {
   }
   double nCO2(const double &r) {
     if (!init)
-      throw("atmointerp not initialized!");
+      toss("atmointerp not initialized!");
     km = (r - rMars)/1e5;
     /* if (km > 300) { */
     /*   return 0; */
@@ -206,6 +206,17 @@ struct atmointerp {
     thisr=sqrt(thisr);
     return nCO2(thisr);
   }
+
+  double lya_sH(const double &r, const double &t, const double &p) {
+    return sHcentercoef/sqrt(Temp(r,Texo));//defined in defintions.h
+  }
+  double lya_sH(const double &r) { return lya_sH(r,0,0); }
+  
+  double lya_sCO2(const double &r, const double &t, const double &p) {
+    return sCO2;//defined in definitions.h
+  }
+  double lya_sCO2(const double &r) { return lya_sCO2(r,0,0); }
+  
 };
 
 void makeCO2file(string altfname, string outfname, int npts, double Texo) {
@@ -336,7 +347,7 @@ void addCO2(string innHname, string innCO2name, string outfname, int npts) {
     //    n:        logalt:       alt (km)         lognCO2:   nCO2 (cm^-3)
     innCO2file >> dum;
     innCO2file >> dum;
-    if ((dum-logalt[i])/logalt[i] > 1e-4) { throw("Altitudes do not match!"); }
+    if ((dum-logalt[i])/logalt[i] > 1e-4) { toss("Altitudes do not match!"); }
     //	std::cout << "logalt[" << i << "] = " << logalt[i] << " , ";
     innCO2file >> dum;
     innCO2file >> lognCO2[i];

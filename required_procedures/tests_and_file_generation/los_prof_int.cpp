@@ -44,7 +44,7 @@ void angles(double lc, double lb_cos_t, double v, double t, double cos_t, double
       std::cout << "t = " << t << std::endl;
       std::cout << "anglevec = [" << anglevec[0] << ", " << anglevec[1] << "]\n";
       std::cout << "top1 = " << top1 << std::endl;
-      throw("top1 less than zero in angles()");
+      toss("top1 less than zero in angles()");
     }
     top1=sqrt(top1);
     double top2 = a*sin(t);
@@ -60,7 +60,7 @@ void angles(double lc, double lb_cos_t, double v, double t, double cos_t, double
       std::cout << "top1 = " << top1 << std::endl;
       std::cout << "top2 = " << top2 << std::endl;
       std::cout << "bottom = " << bottom << std::endl;
-      throw("vsq less than a*a in angles()");
+      toss("vsq less than a*a in angles()");
     }
     double ret=(top1-top2)/bottom;
     if (ret>1.0) ret=1.0;
@@ -162,7 +162,7 @@ void tau_profile(double lc, double lb, double t0, VecDoub &avec, VecDoub &tauvec
     int n_a=0;
     double tausize=taupos0;
     while (tausize > eps) {
-      if (n_a == maxsize) {throw("too many steps in routine tau_profile; increase astep or increase maxsize");}
+      if (n_a == maxsize) {toss("too many steps in routine tau_profile; increase astep or increase maxsize");}
       apos[n_a]=(n_a+1)*astep;
       // std::cout << "a = " << apos[n_a] << std::endl;
       taupos[n_a]=taucoef*abs_a(lc,lb,apos[n_a],t0);

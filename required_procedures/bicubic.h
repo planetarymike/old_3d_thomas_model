@@ -233,7 +233,7 @@ double bicubic_iobs(const double x, const double y,
 	dy20=ygrid.xx[iy+1]-ygrid.xx[iy-1];
 	dy31=ygrid.xx[iy+2]-ygrid.xx[iy  ];
       } else {
-	throw("can't locate x, y grid point in bicubic_iobs.");
+	toss("can't locate x, y grid point in bicubic_iobs.");
       }
 
       //x derivatives

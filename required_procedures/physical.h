@@ -23,6 +23,14 @@ double Temp(const double &r, const double &Texo)
   return Texo - (Texo - 125.0)*exp(-rdiff*rdiff*1e-10/(11.4*Texo));
 }
 
+double Temp(const double &r, const double &t, const double &p, const double &Texo)
+// computes the analytic thermospheric temperature as given by Krasnopolsky (2002)
+{
+  const double rdiff = r - (90e5 + rMars);
+  return Texo - (Texo - 125.0)*exp(-rdiff*rdiff*1e-10/(11.4*Texo));
+}
+
+
 double Tprime(const double &r, const double &T,const double &Texo)
 // computes the derivative of the analytic temperature profile
 {
@@ -429,18 +437,43 @@ struct tabular_atmo {
   }
 
   /* Member functions to retrieve H and CO2 densities */
-  double nH(const double &r) {
+  double nH(const double &r, const double &t, const double &p) {
     double km = (r - rMars)/1e5;
     return exp(lognHinterp.interp(log(km)));
   }
-  double nCO2(const double &r) {
+  double nH(const double &r) { return nH(r,0,0); }
+
+  double nCO2(const double &r, const double &t, const double &p) {
     double km = (r - rMars)/1e5;
     return exp(lognCO2interp.interp(log(km)));
   }
-  
+  double nCO2(const double &r) { return nCO2(r,0,0); }
+
 };
 
-
+struct physical {
+  //structure to wrap functions 
+  //for densities and cross sections
+  double nexo, Texo;
+  
+  physical(double nexoo, double Texoo) : nexo(nexoo), Texo(Texoo) {}
+  
+  /* Member functions to retrieve H and CO2 densities */
+  double H(const double &r, const double &t, const double &p) {
+    return nH(r, nexo, Texo);
+  }
+  double CO2(const double &r, const double &t, const double &p) {
+    return nCO2(r,Texo);
+  }
+  double lya_sH(const double &r, const double &t, const double &p) {
+    return sHcentercoef/sqrt(Temp(r,Texo));//defined in defintions.h
+  }
+  double lya_sCO2(const double &r, const double &t, const double &p) {
+    return sCO2;//defined in definitions.h
+  }
+  
+  
+};
 
 
 
